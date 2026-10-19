@@ -1,0 +1,400 @@
+openapi: 3.0.3
+info:
+  title: OpenGIPHY API
+  version: 1.0.0
+  description: >
+    Contract-first API for the OpenGIPHY GIF sharing platform.
+    This file is the source of truth for both backend (Keval) and
+    frontend (Piyush). Do not change a response shape without
+    agreeing with the other person first.
+
+servers:
+  - url: http://localhost:8000
+    description: Local backend
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPublic'
+        '400':
+          $ref: '#/components/responses/Error'
+
+  /auth/login:
+    post:
+      summary: Login, returns JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: JWT token pair
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '401':
+          $ref: '#/components/responses/Error'
+
+  /gifs:
+    get:
+      summary: Paginated GIF feed (newest first)
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: GIF page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GifPage'
+    post:
+      summary: Upload a GIF
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GifUploadRequest'
+      responses:
+        '201':
+          description: GIF uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GifPublic'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+
+  /gifs/search:
+    get:
+      summary: Search GIFs by title, description, tags
+      security: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Search results page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GifPage'
+
+  /gifs/trending:
+    get:
+      summary: Trending GIFs (likes + recent activity)
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Trending page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GifPage'
+
+  /gifs/{gif_id}:
+    get:
+      summary: GIF detail (increments view_count)
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/GifIdParam'
+      responses:
+        '200':
+          description: GIF detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GifPublic'
+        '404':
+          $ref: '#/components/responses/Error'
+
+  /gifs/{gif_id}/like:
+    post:
+      summary: Like a GIF
+      parameters:
+        - $ref: '#/components/parameters/GifIdParam'
+      responses:
+        '200':
+          description: Liked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GifPublic'
+        '404':
+          $ref: '#/components/responses/Error'
+    delete:
+      summary: Unlike a GIF
+      parameters:
+        - $ref: '#/components/parameters/GifIdParam'
+      responses:
+        '200':
+          description: Unliked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GifPublic'
+        '404':
+          $ref: '#/components/responses/Error'
+
+  /gifs/{gif_id}/report:
+    post:
+      summary: Report a GIF (basic flagging)
+      parameters:
+        - $ref: '#/components/parameters/GifIdParam'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Report recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+        '404':
+          $ref: '#/components/responses/Error'
+
+  /users/{username}:
+    get:
+      summary: Public profile + user's GIFs
+      security: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: Profile with GIF page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfilePublic'
+        '404':
+          $ref: '#/components/responses/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    GifIdParam:
+      name: gif_id
+      in: path
+      required: true
+      schema:
+        type: integer
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 50
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, username, password]
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+        password:
+          type: string
+          minLength: 8
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    Token:
+      type: object
+      required: [access_token, token_type]
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: bearer
+
+    UserPublic:
+      type: object
+      required: [id, email, username, created_at]
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        username:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    GifUploadRequest:
+      type: object
+      required: [file, title]
+      properties:
+        file:
+          type: string
+          format: binary
+          description: GIF file (validated server-side, max 10 MB)
+        title:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 500
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags as repeated form fields or comma-separated
+
+    GifPublic:
+      type: object
+      required: [id, title, tags, file_url, view_count, like_count, uploader, created_at]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        file_url:
+          type: string
+          description: Direct URL to the GIF file
+        view_count:
+          type: integer
+        like_count:
+          type: integer
+        liked_by_me:
+          type: boolean
+          description: True when the authenticated user liked it (false/omitted for anonymous)
+        uploader:
+          $ref: '#/components/schemas/UploaderPublic'
+        created_at:
+          type: string
+          format: date-time
+
+    UploaderPublic:
+      type: object
+      required: [username]
+      properties:
+        username:
+          type: string
+
+    GifPage:
+      type: object
+      required: [items, page, page_size, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/GifPublic'
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+
+    ProfilePublic:
+      type: object
+      required: [user, gifs]
+      properties:
+        user:
+          $ref: '#/components/schemas/UserPublic'
+        gifs:
+          $ref: '#/components/schemas/GifPage'
+
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [detail]
+            properties:
+              detail:
+                type: string
