@@ -24,5 +24,19 @@ pytest -q
 ```
 Tests run against in-memory SQLite — no Postgres needed.
 
+## Seed demo data
+```bash
+pip install -r requirements.txt   # includes pillow for GIF generation
+python seed.py            # idempotent: skips users/GIFs that already exist
+python seed.py --dry-run  # generate one sample GIF to /tmp, no DB writes
+```
+Creates 3 demo users and 10 real animated GIFs in the uploads dir,
+with views/likes spread so trending + search return meaningful results.
+
+Demo logins:
+- `demo@opengiphy.local` / `demo1234`
+- `alice@opengiphy.local` / `alice1234`
+- `bob@opengiphy.local` / `bob1234`
+
 ## Contract
 `../openapi.yaml` is the frozen API contract shared with the frontend.
