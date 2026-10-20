@@ -179,3 +179,22 @@ export async function fetchUserProfile(
   })
   return data
 }
+
+/** The logged-in user (backend's GET /auth/me; bearer attached by the interceptor). */
+export async function fetchCurrentUser(): Promise<UserPublic> {
+  const { data } = await api.get<UserPublic>('/auth/me')
+  return data
+}
+
+/**
+ * GIFs the logged-in user has liked, most-recently-liked first
+ * (GET /users/me/liked). The endpoint takes a `limit` query param
+ * but returns the standard GifPage body, so it drops straight into
+ * the existing infinite-scroll grid.
+ */
+export async function getMyLiked(page = 1, limit = 20): Promise<GifPage> {
+  const { data } = await api.get<GifPage>('/users/me/liked', {
+    params: { page, limit },
+  })
+  return data
+}

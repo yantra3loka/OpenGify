@@ -1,18 +1,32 @@
 <script setup lang="ts">
+import { computed, watch } from 'vue'
 import { useAuth } from '@/api/useAuth'
 import { useRouter } from 'vue-router'
 import SearchBar from '@/components/SearchBar.vue'
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
 import ToastHost from '@/components/ToastHost.vue'
 
-const { isAuthenticated, logout } = useAuth()
+const { isAuthenticated, currentUser, logout, refreshCurrentUser } = useAuth()
 const router = useRouter()
+
+// After a plain login (or a reload with a stored token) currentUser is
+// not set yet — resolve it so the profile chip can render.
+watch(
+  isAuthenticated,
+  (authed) => {
+    if (authed) void refreshCurrentUser()
+  },
+  { immediate: true },
+)
 
 const links = [
   { to: '/', label: 'Home' },
   { to: '/trending', label: 'Trending' },
-  { to: '/search', label: 'Search' },
 ]
+
+const profileInitial = computed(() =>
+  currentUser.value ? currentUser.value.username.charAt(0).toUpperCase() : '',
+)
 
 function handleLogout() {
   logout()
@@ -26,14 +40,25 @@ function handleLogout() {
       <div class="mx-auto w-full max-w-[1240px] px-4">
         <nav class="flex h-16 items-center gap-5">
           <RouterLink to="/" class="flex shrink-0 items-center gap-2.5">
-            <span
-              class="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] bg-accent"
+            <svg
+              class="h-[34px] w-[34px] shrink-0"
+              viewBox="0 0 48 48"
               aria-hidden="true"
             >
-              <svg class="h-4 w-4 text-white" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5.5v13l11-6.5-11-6.5z" />
-              </svg>
-            </span>
+              <circle cx="24" cy="24" r="22" fill="var(--accent)" />
+              <circle cx="16.5" cy="20" r="2.6" fill="#fff" />
+              <path
+                d="M28 16.6v6.8c0 1 1.1 1.6 2 1.1l5.4-3.4c.8-.5.8-1.7 0-2.2L30 15.5c-.9-.5-2 .1-2 1.1z"
+                fill="#fff"
+              />
+              <path
+                d="M14.5 28.5c2.7 3.9 5.9 5.9 9.5 5.9s6.8-2 9.5-5.9"
+                stroke="#fff"
+                stroke-width="3.4"
+                stroke-linecap="round"
+                fill="none"
+              />
+            </svg>
             <span class="text-xl font-extrabold tracking-tight">
               Open<span class="text-accent">GIPHY</span>
             </span>
@@ -52,6 +77,22 @@ function handleLogout() {
           <SearchBar class="mx-auto hidden min-[560px]:flex" />
           <div class="ml-auto flex shrink-0 items-center gap-3 min-[560px]:ml-0">
             <ThemeSwitcher class="hidden min-[560px]:flex" />
+            <RouterLink
+              v-if="isAuthenticated && currentUser"
+              :to="{ name: 'profile', params: { username: currentUser.username } }"
+              class="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 ring-1 ring-line transition-colors hover:ring-accent"
+              :aria-label="`Your profile, @${currentUser.username}`"
+            >
+              <span
+                class="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-xs font-extrabold text-white"
+                aria-hidden="true"
+              >
+                {{ profileInitial }}
+              </span>
+              <span class="hidden text-sm font-semibold text-ink min-[560px]:inline">
+                {{ currentUser.username }}
+              </span>
+            </RouterLink>
             <RouterLink
               v-if="isAuthenticated"
               to="/upload"

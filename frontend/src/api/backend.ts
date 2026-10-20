@@ -41,6 +41,8 @@ export interface BackendApi {
     page?: number,
     page_size?: number,
   ) => Promise<ProfilePublic>
+  fetchCurrentUser: () => Promise<UserPublic>
+  getMyLiked: (page?: number, limit?: number) => Promise<GifPage>
 }
 
 const useMocks = import.meta.env.VITE_USE_MOCKS === 'true'

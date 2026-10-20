@@ -30,6 +30,7 @@
           <p class="mt-1 text-sm text-ink-soft">
             Joined {{ formatDate(user.created_at) }} · {{ total }} GIFs
           </p>
+          <p v-if="isOwn" class="mt-0.5 text-sm text-ink-soft">{{ user.email }}</p>
           <dl class="mt-3 flex gap-8">
             <div>
               <dd class="text-lg font-extrabold text-ink">{{ total }}</dd>
@@ -41,27 +42,67 @@
             </div>
             <div>
               <dd class="text-lg font-extrabold text-ink">{{ totalLikes }}</dd>
-              <dt class="text-xs font-semibold uppercase tracking-wider text-ink-faint">Total likes</dt>
+              <dt class="text-xs font-semibold uppercase tracking-wider text-ink-faint">Likes received</dt>
+            </div>
+            <div v-if="isOwn">
+              <dd class="text-lg font-extrabold text-ink">{{ likedTotal }}</dd>
+              <dt class="text-xs font-semibold uppercase tracking-wider text-ink-faint">Likes given</dt>
             </div>
           </dl>
         </div>
       </header>
 
-      <GifGrid v-if="items.length > 0" :gifs="items" />
-      <div v-else class="py-16 text-center text-ink-soft">
-        <p>@{{ user.username }} hasn't uploaded any GIFs yet.</p>
-      </div>
-
-      <div v-if="total > items.length" class="mt-6 text-center">
+      <div
+        v-if="isOwn"
+        class="mb-6 inline-flex rounded-full bg-raise p-1 ring-1 ring-line"
+        role="tablist"
+        aria-label="Profile sections"
+      >
         <button
           type="button"
-          :disabled="profile.isFetching.value"
-          class="btn-soft px-4 py-2 text-sm"
-          @click="loadMore"
+          role="tab"
+          :aria-selected="activeTab === 'uploads'"
+          class="rounded-full px-4 py-1.5 text-sm font-semibold transition-colors"
+          :class="activeTab === 'uploads' ? 'bg-ink text-bg' : 'text-ink-soft hover:text-ink'"
+          @click="activeTab = 'uploads'"
         >
-          {{ profile.isFetching.value ? 'Loading…' : 'Load more' }}
+          Uploads
+        </button>
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="activeTab === 'liked'"
+          class="rounded-full px-4 py-1.5 text-sm font-semibold transition-colors"
+          :class="activeTab === 'liked' ? 'bg-ink text-bg' : 'text-ink-soft hover:text-ink'"
+          @click="activeTab = 'liked'"
+        >
+          Liked
         </button>
       </div>
+
+      <template v-if="!isOwn || activeTab === 'uploads'">
+        <GifGrid v-if="items.length > 0" :gifs="items" />
+        <div v-else class="py-16 text-center text-ink-soft">
+          <p>@{{ user.username }} hasn't uploaded any GIFs yet.</p>
+        </div>
+
+        <div v-if="total > items.length" class="mt-6 text-center">
+          <button
+            type="button"
+            :disabled="profile.isFetching.value"
+            class="btn-soft px-4 py-2 text-sm"
+            @click="loadMore"
+          >
+            {{ profile.isFetching.value ? 'Loading…' : 'Load more' }}
+          </button>
+        </div>
+      </template>
+
+      <PaginatedGifGrid v-else :query="liked">
+        <template #empty>
+          <p>No liked GIFs yet.</p>
+        </template>
+      </PaginatedGifGrid>
     </div>
   </div>
 </template>
@@ -70,13 +111,20 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getApiErrorMessage } from '@/api/client'
-import { useUserProfile } from '@/api/queries'
+import { useMyLikedGifs, useUserProfile } from '@/api/queries'
+import { useAuth } from '@/api/useAuth'
 import type { GifPublic } from '@/api/types'
 import GifGrid from '@/components/GifGrid.vue'
+import PaginatedGifGrid from '@/components/PaginatedGifGrid.vue'
 
 const route = useRoute()
 const username = computed(() => String(route.params.username))
 const page = ref(1)
+
+const { currentUser } = useAuth()
+const isOwn = computed(
+  () => !!currentUser.value && currentUser.value.username === username.value,
+)
 
 const profile = useUserProfile(username, page)
 const user = computed(() => profile.data.value?.user ?? null)
@@ -84,6 +132,14 @@ const total = computed(() => profile.data.value?.gifs.total ?? 0)
 const errorMessage = computed(() =>
   profile.error.value ? getApiErrorMessage(profile.error.value) : 'Something went wrong.',
 )
+
+// Own profile only: the GIFs I've liked (GET /users/me/liked).
+const activeTab = ref<'uploads' | 'liked'>('uploads')
+watch(username, () => {
+  activeTab.value = 'uploads'
+})
+const liked = useMyLikedGifs(() => isOwn.value)
+const likedTotal = computed(() => liked.data.value?.pages[0]?.total ?? 0)
 
 // Accumulate pages (contract paginates the profile's GIF list).
 const items = ref<GifPublic[]>([])

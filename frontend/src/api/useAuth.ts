@@ -39,5 +39,27 @@ export function useAuth() {
     currentUser.value = null
   }
 
-  return { token, currentUser, isAuthenticated, login, register, logout }
+  /**
+   * Resolve who owns the stored token (register sets currentUser
+   * directly; a plain login doesn't). Failures are swallowed —
+   * callers simply keep currentUser null (e.g. no profile chip).
+   */
+  async function refreshCurrentUser(): Promise<void> {
+    if (!token.value || currentUser.value) return
+    try {
+      currentUser.value = await backend.fetchCurrentUser()
+    } catch {
+      /* stay anonymous-looking until the next successful call */
+    }
+  }
+
+  return {
+    token,
+    currentUser,
+    isAuthenticated,
+    login,
+    register,
+    logout,
+    refreshCurrentUser,
+  }
 }

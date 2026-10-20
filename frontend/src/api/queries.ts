@@ -20,6 +20,7 @@ export const gifKeys = {
   detail: (id: number) => [...gifKeys.all, 'detail', id] as const,
   profile: (username: string, page: number) =>
     [...gifKeys.all, 'profile', username, page] as const,
+  liked: () => [...gifKeys.all, 'liked'] as const,
 }
 
 function nextPageParam(last: GifPage): number | undefined {
@@ -86,6 +87,17 @@ export function useUserProfile(
     queryKey: computed(() => gifKeys.profile(toValue(username), toValue(page))),
     queryFn: () =>
       backend.fetchUserProfile(toValue(username), toValue(page), PAGE_SIZE),
+  })
+}
+
+/** The logged-in user's liked GIFs (GET /users/me/liked), newest like first. */
+export function useMyLikedGifs(enabled: MaybeRefOrGetter<boolean> = true) {
+  return useInfiniteQuery({
+    queryKey: gifKeys.liked(),
+    queryFn: ({ pageParam }) => backend.getMyLiked(pageParam, PAGE_SIZE),
+    initialPageParam: 1,
+    getNextPageParam: nextPageParam,
+    enabled: computed(() => toValue(enabled)),
   })
 }
 

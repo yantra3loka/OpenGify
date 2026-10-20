@@ -184,3 +184,17 @@ export async function fetchUserProfile(
   const gifs = store.filter((g) => g.uploader.username === username)
   return { user, gifs: mockGifPage(gifs, page, page_size) }
 }
+
+export async function fetchCurrentUser(): Promise<UserPublic> {
+  await delay()
+  return mockUser
+}
+
+export async function getMyLiked(
+  page = 1,
+  limit = PAGE_DEFAULT,
+): Promise<GifPage> {
+  await delay()
+  const liked = store.filter((g) => g.liked_by_me)
+  return paginate(liked, page, limit)
+}
