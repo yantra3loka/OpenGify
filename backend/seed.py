@@ -4,9 +4,9 @@ Seeds directly into the database via SQLModel (no running server needed)
 and writes real animated GIF files into the uploads dir.
 
 Demo logins (passwords are demo-only, change in production):
-    demo@opengiphy.local  / demo1234   (username: demo)
-    alice@opengiphy.local / alice1234  (username: alice)
-    bob@opengiphy.local   / bob1234    (username: bob)
+    demo@example.com  / demo1234   (username: demo)
+    alice@example.com / alice1234  (username: alice)
+    bob@example.com   / bob1234    (username: bob)
 
 Usage:
     python seed.py            # seed everything (idempotent-ish, skips existing)
@@ -27,9 +27,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Demo users
 # ----------------------------------------------------------------------------
 DEMO_USERS = [
-    {"email": "demo@opengiphy.local", "username": "demo", "password": "demo1234"},
-    {"email": "alice@opengiphy.local", "username": "alice", "password": "alice1234"},
-    {"email": "bob@opengiphy.local", "username": "bob", "password": "bob1234"},
+    {"email": "demo@example.com", "username": "demo", "password": "demo1234"},
+    {"email": "alice@example.com", "username": "alice", "password": "alice1234"},
+    {"email": "bob@example.com", "username": "bob", "password": "bob1234"},
 ]
 
 # ----------------------------------------------------------------------------

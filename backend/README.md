@@ -34,9 +34,9 @@ Creates 3 demo users and 10 real animated GIFs in the uploads dir,
 with views/likes spread so trending + search return meaningful results.
 
 Demo logins:
-- `demo@opengiphy.local` / `demo1234`
-- `alice@opengiphy.local` / `alice1234`
-- `bob@opengiphy.local` / `bob1234`
+- `demo@example.com` / `demo1234`
+- `alice@example.com` / `alice1234`
+- `bob@example.com` / `bob1234`
 
 ## Contract
 `../openapi.yaml` is the frozen API contract shared with the frontend.

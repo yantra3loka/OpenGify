@@ -54,8 +54,8 @@ cd backend
 python seed.py
 ```
 
-Demo logins: `demo@opengiphy.local` / `demo1234`, `alice@opengiphy.local` / `alice1234`,
-`bob@opengiphy.local` / `bob1234`.
+Demo logins: `demo@example.com` / `demo1234`, `alice@example.com` / `alice1234`,
+`bob@example.com` / `bob1234`.
 
 ### Frontend
 
