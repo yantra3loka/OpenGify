@@ -21,6 +21,28 @@
         />
         <div class="mt-4 flex flex-wrap items-center gap-3">
           <LikeButton :gif-id="gif.id" :liked-by-me="gif.liked_by_me" :like-count="gif.like_count" />
+          <button
+            type="button"
+            class="btn-soft px-3 py-1.5 text-sm"
+            :disabled="downloading"
+            @click="downloadGif"
+          >
+            <svg
+              class="h-4 w-4 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
+              />
+            </svg>
+            {{ downloading ? 'Downloading…' : 'Download' }}
+          </button>
           <span class="text-sm text-ink-soft">{{ gif.view_count }} views</span>
           <span class="text-sm text-ink-faint">{{ formatDate(gif.created_at) }}</span>
         </div>
@@ -129,6 +151,49 @@ function formatDate(iso: string): string {
     month: 'short',
     day: 'numeric',
   })
+}
+
+const downloading = ref(false)
+
+function slugifyTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+/**
+ * Save the GIF file to the visitor's device. The file is served from
+ * the API origin, so a plain <a download> would be ignored
+ * cross-origin — fetch it as a Blob and trigger the download via an
+ * object URL instead. On failure, fall back to opening the file in a
+ * new tab. Works for anonymous visitors too (files are public).
+ */
+async function downloadGif() {
+  if (!gif.value || downloading.value) return
+  downloading.value = true
+  const fileUrl = resolveFileUrl(gif.value.file_url)
+  const filename = `${slugifyTitle(gif.value.title) || `opengiphy-${gif.value.id}`}.gif`
+  try {
+    const response = await fetch(fileUrl)
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    const blob = await response.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = objectUrl
+    anchor.download = filename
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(objectUrl)
+    toast('Download started')
+  } catch {
+    window.open(fileUrl, '_blank', 'noopener')
+    toast('Download failed — opened the GIF in a new tab')
+  } finally {
+    downloading.value = false
+  }
 }
 
 async function submitReport() {
