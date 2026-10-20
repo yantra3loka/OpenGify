@@ -26,12 +26,13 @@ Tests run against in-memory SQLite — no Postgres needed.
 
 ## Seed demo data
 ```bash
-pip install -r requirements.txt   # includes pillow for GIF generation
 python seed.py            # idempotent: skips users/GIFs that already exist
-python seed.py --dry-run  # generate one sample GIF to /tmp, no DB writes
+python seed.py --dry-run  # copy one bundled sample GIF to /tmp, no DB writes
 ```
-Creates 3 demo users and 10 real animated GIFs in the uploads dir,
-with views/likes spread so trending + search return meaningful results.
+Creates 3 demo users and 25 real animated GIFs. The GIF files are bundled in
+`seed_assets/` and copied into the uploads dir with uuid filenames (same as
+user uploads), with views/likes spread so trending + search return meaningful
+results.
 
 Demo logins:
 - `demo@example.com` / `demo1234`

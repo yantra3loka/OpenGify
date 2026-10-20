@@ -1,7 +1,9 @@
 """OpenGIPHY demo-data seeder.
 
-Seeds directly into the database via SQLModel (no running server needed)
-and writes real animated GIF files into the uploads dir.
+Seeds directly into the database via SQLModel (no running server needed).
+GIF rows are created from the real GIF files bundled in ``seed_assets/``
+next to this script: each file is copied into the uploads dir with a uuid
+filename, exactly like a user upload.
 
 Demo logins (passwords are demo-only, change in production):
     demo@example.com  / demo1234   (username: demo)
@@ -10,7 +12,7 @@ Demo logins (passwords are demo-only, change in production):
 
 Usage:
     python seed.py            # seed everything (idempotent-ish, skips existing)
-    python seed.py --dry-run  # generate one sample GIF to /tmp, no DB writes
+    python seed.py --dry-run  # copy one sample GIF to /tmp, no DB writes
 
 Reads DATABASE_URL and UPLOAD_DIR from app.config.settings, same as the app.
 """
@@ -18,10 +20,13 @@ Reads DATABASE_URL and UPLOAD_DIR from app.config.settings, same as the app.
 from __future__ import annotations
 
 import os
-import re
+import shutil
 import sys
+import uuid
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "seed_assets")
 
 # ----------------------------------------------------------------------------
 # Demo users
@@ -33,129 +38,238 @@ DEMO_USERS = [
 ]
 
 # ----------------------------------------------------------------------------
-# Demo GIFs: (title, description, tags, bg color, accent color, views, likes)
-# likes = number of Like rows to create (spread 0-3 across 3 demo users),
-# so /gifs/trending (ordered by like_count desc) returns meaningful results.
+# Demo GIFs. Each entry copies seed_assets/<file> into the uploads dir.
+# "likes" lists the usernames that get a real Like row, so like_count always
+# equals the number of Like rows and /gifs/trending (ordered by like_count
+# desc, then newest) returns meaningful results.
 # ----------------------------------------------------------------------------
 GIF_SPECS = [
-    (
-        "Dancing Cat",
-        "A groovy cat that just can't stop moving.",
-        ["cat", "dance", "funny"],
-        (45, 45, 60), (255, 194, 14),
-        1520, 3,
-    ),
-    (
-        "Rocket Launch",
-        "3... 2... 1... liftoff!",
-        ["space", "rocket"],
-        (20, 20, 40), (255, 90, 90),
-        1180, 3,
-    ),
-    (
-        "Coffee Loop",
-        "Endless coffee for endless code.",
-        ["coffee", "loop", "morning"],
-        (60, 40, 25), (200, 150, 90),
-        940, 2,
-    ),
-    (
-        "Neon Wave",
-        "Synthwave vibes in a loop.",
-        ["neon", "wave", "aesthetic", "loop"],
-        (25, 10, 45), (0, 255, 200),
-        810, 2,
-    ),
-    (
-        "Happy Doggo",
-        "Pure joy, wagging forever.",
-        ["dog", "happy", "cute"],
-        (40, 60, 35), (255, 220, 100),
-        660, 2,
-    ),
-    (
-        "Pixel Sunset",
-        "An 8-bit sun dips below the horizon.",
-        ["pixel", "sunset", "art"],
-        (70, 25, 50), (255, 140, 60),
-        520, 1,
-    ),
-    (
-        "Bouncing Ball",
-        "It bounces. That's the whole GIF. You're welcome.",
-        ["ball", "bounce", "funny"],
-        (30, 50, 70), (120, 220, 255),
-        430, 1,
-    ),
-    (
-        "Disco Party",
-        "Saturday night, compressed to 1 second.",
-        ["disco", "party", "music"],
-        (50, 20, 60), (255, 80, 200),
-        310, 1,
-    ),
-    (
-        "Floating Astronaut",
-        "Drifting through the void, peacefully.",
-        ["space", "astronaut", "chill"],
-        (10, 15, 30), (180, 200, 255),
-        220, 0,
-    ),
-    (
-        "Rainy Day",
-        "Cozy rain loop for focus time.",
-        ["rain", "cozy", "lofi"],
-        (35, 45, 55), (140, 180, 220),
-        140, 0,
-    ),
+    {
+        "file": "keyboard-cat.gif",
+        "title": "Keyboard Cat",
+        "description": "The legendary cat who plays the keyboard like a pro.",
+        "tags": ["cat", "music", "funny", "classic"],
+        "uploader": "demo",
+        "views": 8940,
+        "likes": ["demo", "alice", "bob"],
+    },
+    {
+        "file": "slow-clap.gif",
+        "title": "Slow Clap",
+        "description": "When sarcasm deserves a standing ovation.",
+        "tags": ["clap", "sarcasm", "reaction"],
+        "uploader": "alice",
+        "views": 6210,
+        "likes": ["demo", "alice", "bob"],
+    },
+    {
+        "file": "party-cat.gif",
+        "title": "Party Cat",
+        "description": "This cat parties harder than all of us.",
+        "tags": ["cat", "party", "dance"],
+        "uploader": "bob",
+        "views": 5380,
+        "likes": ["demo", "alice"],
+    },
+    {
+        "file": "smug-cat.gif",
+        "title": "Smug Cat",
+        "description": "That face when you were right all along.",
+        "tags": ["cat", "smug", "reaction"],
+        "uploader": "demo",
+        "views": 4920,
+        "likes": ["alice", "bob"],
+    },
+    {
+        "file": "pizza-time.gif",
+        "title": "Pizza Time",
+        "description": "Hot, cheesy and gone in sixty seconds.",
+        "tags": ["pizza", "food", "yummy"],
+        "uploader": "alice",
+        "views": 7650,
+        "likes": ["demo", "alice", "bob"],
+    },
+    {
+        "file": "beat-drop.gif",
+        "title": "Beat Drop",
+        "description": "Even the Mona Lisa feels the bass drop.",
+        "tags": ["music", "dj", "beat"],
+        "uploader": "bob",
+        "views": 4410,
+        "likes": ["demo", "alice"],
+    },
+    {
+        "file": "soccer-goal.gif",
+        "title": "Wonder Goal",
+        "description": "Giroud finds the top corner. Absolute scenes.",
+        "tags": ["football", "goal", "sports"],
+        "uploader": "demo",
+        "views": 5870,
+        "likes": ["alice", "bob"],
+    },
+    {
+        "file": "ocean-wave.gif",
+        "title": "Ocean Wave",
+        "description": "Endless waves rolling in. Pure calm.",
+        "tags": ["ocean", "waves", "nature", "loop"],
+        "uploader": "alice",
+        "views": 3980,
+        "likes": ["demo"],
+    },
+    {
+        "file": "rocket-launch.gif",
+        "title": "Rocket Launch",
+        "description": "NASA's SLS lifts off. Next stop, the Moon.",
+        "tags": ["space", "rocket", "nasa", "launch"],
+        "uploader": "bob",
+        "views": 6540,
+        "likes": ["demo", "alice"],
+    },
+    {
+        "file": "best-friends-puppy.gif",
+        "title": "Best Friends",
+        "description": "A puppy and his favourite human, inseparable.",
+        "tags": ["dog", "puppy", "cute", "friends"],
+        "uploader": "demo",
+        "views": 7230,
+        "likes": ["alice", "bob"],
+    },
+    {
+        "file": "oh-hi.gif",
+        "title": "Oh Hi Mark",
+        "description": "Oh hi there, didn't see you come in.",
+        "tags": ["hello", "greeting", "movie", "funny"],
+        "uploader": "alice",
+        "views": 3560,
+        "likes": ["demo", "bob"],
+    },
+    {
+        "file": "shipped-it.gif",
+        "title": "Shipped It",
+        "description": "Deploy is green, sprint is done, the boss celebrates.",
+        "tags": ["work", "celebration", "win"],
+        "uploader": "bob",
+        "views": 2890,
+        "likes": ["demo", "alice"],
+    },
+    {
+        "file": "you-got-this.gif",
+        "title": "You Got This",
+        "description": "A little push for the days that feel heavy.",
+        "tags": ["motivation", "positive", "believe"],
+        "uploader": "demo",
+        "views": 3120,
+        "likes": ["alice"],
+    },
+    {
+        "file": "happy-dog.gif",
+        "title": "Happy Dog",
+        "description": "Pure joy on four legs, tail wagging at full speed.",
+        "tags": ["dog", "happy", "cute"],
+        "uploader": "alice",
+        "views": 5480,
+        "likes": ["demo", "bob"],
+    },
+    {
+        "file": "facepalm.gif",
+        "title": "Facepalm",
+        "description": "For the moments words simply cannot fix.",
+        "tags": ["facepalm", "reaction", "fail"],
+        "uploader": "bob",
+        "views": 4760,
+        "likes": ["demo", "alice"],
+    },
+    {
+        "file": "mind-blown.gif",
+        "title": "Mind Blown",
+        "description": "Wait... what just happened?",
+        "tags": ["mindblown", "wow", "reaction"],
+        "uploader": "demo",
+        "views": 4190,
+        "likes": ["bob"],
+    },
+    {
+        "file": "laughing-hard.gif",
+        "title": "Laughing Hard",
+        "description": "The kind of laugh that makes your stomach hurt.",
+        "tags": ["laugh", "funny", "lol"],
+        "uploader": "alice",
+        "views": 3650,
+        "likes": ["demo", "bob"],
+    },
+    {
+        "file": "thumbs-up.gif",
+        "title": "Thumbs Up",
+        "description": "Approved. Great job, keep going.",
+        "tags": ["thumbsup", "yes", "goodjob"],
+        "uploader": "bob",
+        "views": 2340,
+        "likes": ["alice"],
+    },
+    {
+        "file": "dance-party.gif",
+        "title": "Dance Party",
+        "description": "Friday energy, bottled into a loop.",
+        "tags": ["dance", "party", "friday"],
+        "uploader": "demo",
+        "views": 2980,
+        "likes": ["alice", "bob"],
+    },
+    {
+        "file": "sleepy-monday.gif",
+        "title": "Sleepy Monday",
+        "description": "Five more minutes, please. Mondays are hard.",
+        "tags": ["sleepy", "monday", "work"],
+        "uploader": "alice",
+        "views": 1870,
+        "likes": ["demo"],
+    },
+    {
+        "file": "coffee-first.gif",
+        "title": "Coffee First",
+        "description": "Do not talk to me before this cup.",
+        "tags": ["coffee", "morning", "fuel"],
+        "uploader": "bob",
+        "views": 2640,
+        "likes": ["demo", "alice"],
+    },
+    {
+        "file": "wow-surprised.gif",
+        "title": "Oh Wow",
+        "description": "A plot twist nobody saw coming.",
+        "tags": ["wow", "surprise", "reaction"],
+        "uploader": "demo",
+        "views": 3310,
+        "likes": ["alice", "bob"],
+    },
+    {
+        "file": "high-five.gif",
+        "title": "High Five",
+        "description": "Up top, for every small win.",
+        "tags": ["highfive", "win", "team"],
+        "uploader": "alice",
+        "views": 2150,
+        "likes": ["demo"],
+    },
+    {
+        "file": "namaste.gif",
+        "title": "Namaste",
+        "description": "Peace, gratitude and good vibes only.",
+        "tags": ["namaste", "peace", "india"],
+        "uploader": "bob",
+        "views": 1540,
+        "likes": [],
+    },
+    {
+        "file": "bollywood-dance.gif",
+        "title": "Bollywood Dance",
+        "description": "Full filmy energy, dhol beats and big moves.",
+        "tags": ["bollywood", "dance", "india", "celebration"],
+        "uploader": "demo",
+        "views": 2730,
+        "likes": ["alice", "bob"],
+    },
 ]
-
-GIF_W, GIF_H, FRAMES = 320, 240, 8
-
-
-def slugify(title: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
-
-
-def make_animated_gif(path: str, title: str, bg: tuple, accent: tuple) -> None:
-    """Generate a small real animated GIF: moving dot + title text."""
-    from PIL import Image, ImageDraw, ImageFont
-
-    try:
-        font = ImageFont.truetype("DejaVuSans-Bold.ttf", 22)
-        small = ImageFont.truetype("DejaVuSans.ttf", 13)
-    except OSError:
-        font = ImageFont.load_default()
-        small = ImageFont.load_default()
-
-    frames = []
-    for i in range(FRAMES):
-        img = Image.new("RGB", (GIF_W, GIF_H), bg)
-        d = ImageDraw.Draw(img)
-
-        # moving accent dot (the "animation")
-        x = 24 + int(i * (GIF_W - 48) / (FRAMES - 1))
-        y = 60 + int(18 * (1 if i % 2 == 0 else -1) * (i % 3) / 2)
-        d.ellipse([x - 16, y - 16, x + 16, y + 16], fill=accent)
-
-        # title text, centered
-        tb = d.textbbox((0, 0), title, font=font)
-        d.text(((GIF_W - (tb[2] - tb[0])) / 2, 110), title, font=font, fill=(255, 255, 255))
-
-        # frame progress dots
-        for j in range(FRAMES):
-            cx = GIF_W // 2 - (FRAMES * 14) // 2 + j * 14 + 7
-            r = 5 if j == i else 3
-            d.ellipse([cx - r, 205 - r, cx + r, 205 + r],
-                      fill=accent if j == i else (120, 120, 140))
-
-        d.text((10, GIF_H - 22), "OpenGIPHY demo", font=small, fill=(160, 160, 170))
-        frames.append(img)
-
-    frames[0].save(
-        path, save_all=True, append_images=frames[1:],
-        duration=140, loop=0, optimize=False,
-    )
 
 
 def seed() -> dict:
@@ -175,14 +289,14 @@ def seed() -> dict:
     created_likes = 0
 
     with Session(engine) as session:
-        users: list[User] = []
+        users_by_name: dict[str, User] = {}
         for spec in DEMO_USERS:
             existing = session.exec(
                 select(User).where(User.email == spec["email"])
             ).first()
             if existing:
                 skipped_users += 1
-                users.append(existing)
+                users_by_name[spec["username"]] = existing
                 continue
             user = User(
                 email=spec["email"],
@@ -192,43 +306,47 @@ def seed() -> dict:
             session.add(user)
             session.commit()
             session.refresh(user)
-            users.append(user)
+            users_by_name[spec["username"]] = user
             created_users += 1
 
-        for idx, (title, desc, tags, bg, accent, views, n_likes) in enumerate(GIF_SPECS):
+        for spec in GIF_SPECS:
             existing = session.exec(
-                select(Gif).where(Gif.title == title)
+                select(Gif).where(Gif.title == spec["title"])
             ).first()
             if existing:
                 skipped_gifs += 1
                 continue
 
-            uploader = users[idx % len(users)]
-            filename = f"seed-{slugify(title)}.gif"
+            asset_path = os.path.join(ASSETS_DIR, spec["file"])
+            if not os.path.isfile(asset_path):
+                print(f"WARNING: seed asset missing, skipping: {asset_path}")
+                skipped_gifs += 1
+                continue
+
+            filename = f"{uuid.uuid4().hex}.gif"
             file_path = os.path.join(settings.upload_dir, filename)
-            make_animated_gif(file_path, title, bg, accent)
+            shutil.copyfile(asset_path, file_path)
 
             gif = Gif(
-                user_id=uploader.id,
-                title=title,
-                description=desc,
-                tags=tags,
+                user_id=users_by_name[spec["uploader"]].id,
+                title=spec["title"],
+                description=spec["description"],
+                tags=spec["tags"],
                 file_path=file_path,
                 file_url=f"/uploads/{filename}",
-                view_count=views,
-                like_count=0,
+                view_count=spec["views"],
+                like_count=len(spec["likes"]),
             )
             session.add(gif)
             session.commit()
             session.refresh(gif)
             created_gifs += 1
 
-            for liker in users[:n_likes]:
+            for liker_name in spec["likes"]:
+                liker = users_by_name[liker_name]
                 if session.get(Like, (liker.id, gif.id)) is None:
                     session.add(Like(user_id=liker.id, gif_id=gif.id))
                     created_likes += 1
-            gif.like_count = n_likes
-            session.add(gif)
             session.commit()
 
     return {
@@ -241,11 +359,10 @@ def seed() -> dict:
 
 
 def dry_run() -> str:
-    """Generate one sample GIF to /tmp without touching the DB."""
-    os.makedirs("/tmp", exist_ok=True)
+    """Copy one bundled seed GIF to /tmp without touching the DB."""
+    src = os.path.join(ASSETS_DIR, GIF_SPECS[0]["file"])
     path = "/tmp/opengiphy-dryrun.gif"
-    title, _, _, bg, accent, _, _ = GIF_SPECS[0]
-    make_animated_gif(path, title, bg, accent)
+    shutil.copyfile(src, path)
     size = os.path.getsize(path)
     return f"{path} ({size} bytes)"
 
