@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="frontend/public/logo.svg" alt="OpenGify logo" width="96" />
+</p>
+
 # OpenGify
 
 A Giphy-style GIF sharing platform — an open-source contribution project by Yantra3loka LLP.
