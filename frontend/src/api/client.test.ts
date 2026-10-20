@@ -1,3 +1,4 @@
+import { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { describe, expect, it } from 'vitest'
 import {
   API_BASE_URL,
@@ -5,7 +6,10 @@ import {
   clearAccessToken,
   getAccessToken,
   getApiErrorMessage,
+  resolveFileUrl,
   setAccessToken,
+  setUnauthorizedHandler,
+  uploadGif,
 } from './client'
 import { mockGifPage, mockGifs } from './mocks'
 
@@ -43,6 +47,102 @@ describe('API client', () => {
       'Bad file',
     )
     expect(getApiErrorMessage(new Error('Network Error'))).toBe('Network Error')
+  })
+
+  it('sends upload tags as ONE comma-separated form field (Keval, Day 2)', async () => {
+    const originalAdapter = api.defaults.adapter
+    let seenData: unknown
+    api.defaults.adapter = async (config) => {
+      seenData = config.data
+      return {
+        data: mockGifs[0],
+        status: 201,
+        statusText: 'Created',
+        headers: {},
+        config,
+      }
+    }
+    try {
+      const file = new File(['GIF89a'], 'cat.gif', { type: 'image/gif' })
+      await uploadGif({
+        file,
+        title: 'Cat',
+        description: 'A cat',
+        tags: ['cat', 'dance', 'funny'],
+      })
+    } finally {
+      api.defaults.adapter = originalAdapter
+    }
+    expect(seenData).toBeInstanceOf(FormData)
+    const form = seenData as FormData
+    expect(form.getAll('tags')).toEqual(['cat,dance,funny'])
+    expect(form.get('title')).toBe('Cat')
+  })
+})
+
+describe('resolveFileUrl', () => {
+  it('resolves API-relative paths against the API base URL', () => {
+    expect(resolveFileUrl('/uploads/seed-dancing-cat.gif')).toBe(
+      'http://localhost:8000/uploads/seed-dancing-cat.gif',
+    )
+  })
+
+  it('passes absolute URLs through unchanged', () => {
+    expect(resolveFileUrl('http://localhost:8000/uploads/x.gif')).toBe(
+      'http://localhost:8000/uploads/x.gif',
+    )
+    expect(resolveFileUrl('https://cdn.example.com/x.gif')).toBe(
+      'https://cdn.example.com/x.gif',
+    )
+  })
+})
+
+describe('401 handling (24h token, no refresh — Keval, Day 2)', () => {
+  const rejectingAdapter = async (config: InternalAxiosRequestConfig) => {
+    throw new AxiosError(
+      'Request failed with status code 401',
+      'ERR_BAD_REQUEST',
+      config,
+      null,
+      {
+        data: { detail: 'Unauthorized' },
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: {},
+        config,
+      },
+    )
+  }
+
+  it('clears the token and calls the handler on a non-auth 401', async () => {
+    setAccessToken('expired-token')
+    let calls = 0
+    setUnauthorizedHandler(() => {
+      calls += 1
+    })
+    await expect(
+      api.get('/gifs/1', { adapter: rejectingAdapter }),
+    ).rejects.toThrow()
+    expect(calls).toBe(1)
+    expect(getAccessToken()).toBeNull()
+  })
+
+  it('does NOT treat a failed login 401 as an expired session', async () => {
+    setAccessToken('some-token')
+    let calls = 0
+    setUnauthorizedHandler(() => {
+      calls += 1
+    })
+    await expect(
+      api.post(
+        '/auth/login',
+        { email: 'a@b.c', password: 'wrong' },
+        { adapter: rejectingAdapter },
+      ),
+    ).rejects.toThrow()
+    expect(calls).toBe(0)
+    expect(getAccessToken()).toBe('some-token')
+    clearAccessToken()
   })
 })
 

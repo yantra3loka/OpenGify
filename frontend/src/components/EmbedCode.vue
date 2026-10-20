@@ -25,6 +25,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { resolveFileUrl } from '@/api/client'
 import type { GifPublic } from '@/api/types'
 
 const props = defineProps<{ gif: GifPublic }>()
@@ -33,16 +34,19 @@ const pageUrl = computed(
   () => `${window.location.origin}/g/${props.gif.id}`,
 )
 
+// Embed codes are pasted outside this app, so the URL must be absolute.
+const fileUrl = computed(() => resolveFileUrl(props.gif.file_url))
+
 const snippets = computed(() => [
   {
     label: 'HTML',
-    code: `<a href="${pageUrl.value}"><img src="${props.gif.file_url}" alt="${props.gif.title}"></a>`,
+    code: `<a href="${pageUrl.value}"><img src="${fileUrl.value}" alt="${props.gif.title}"></a>`,
   },
   {
     label: 'Markdown',
-    code: `[![${props.gif.title}](${props.gif.file_url})](${pageUrl.value})`,
+    code: `[![${props.gif.title}](${fileUrl.value})](${pageUrl.value})`,
   },
-  { label: 'Direct URL', code: props.gif.file_url },
+  { label: 'Direct URL', code: fileUrl.value },
 ])
 
 const copiedLabel = ref<string | null>(null)

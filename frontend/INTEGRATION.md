@@ -43,6 +43,33 @@ app.add_middleware(
 )
 ```
 
+### ✅ RESOLVED — Keval's answers (Day 2, 20 Oct) + verification
+
+1. **`/uploads`**: served statically by the backend. `file_url` comes back
+   **relative** (`/uploads/x.gif`); the frontend resolves it against the API
+   base URL (`resolveFileUrl` in `src/api/client.ts`, used by GifCard,
+   GifDetailPage and EmbedCode).
+2. **Tags**: upload sends **one comma-separated `tags` field**; responses
+   return a JSON array. Frontend changed from repeated fields (Day 2).
+3. **Token**: `access_token` only, **24h expiry, no refresh**. On a 401 the
+   client clears the token and redirects to `/login` (response interceptor
+   in `client.ts`, wired in `main.ts`; `/auth/*` 401s are exempt so a failed
+   login still shows its form error).
+4. **Register**: returns the user only — the frontend's immediate
+   `/auth/login` with the same credentials **is** the intended auto-login.
+
+CORS: already in Keval's app (`allow_origins` includes
+`http://localhost:5173`) — verified with a preflight request, Day 2.
+
+**Day-2 verification (20 Oct):** backend run locally (SQLite + `seed.py`),
+frontend in real mode (`VITE_USE_MOCKS=false`). 22/22 API-level acceptance
+checks passed — register/auto-login, demo login, feed + image serving,
+search + tag filter, trending order, upload (comma-separated tags parsed to
+an array), like persistence, view-count increment, profile, report, CORS.
+**Zero contract mismatches.** Note: the seeded demo login is
+`demo@example.com / demo1234` (Keval's `e40ef3c` — `EmailStr` rejects
+`.local` addresses, so `demo@opengiphy.local` no longer exists).
+
 ## 1. Bring up both sides
 
 | Side     | Command (each in its own terminal) | Must be at            |

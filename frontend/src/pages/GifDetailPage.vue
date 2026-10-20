@@ -15,7 +15,7 @@
     <article v-else-if="gif" class="grid gap-6 md:grid-cols-[1fr_320px]">
       <div>
         <img
-          :src="gif.file_url"
+          :src="resolveFileUrl(gif.file_url)"
           :alt="gif.title"
           class="w-full rounded-xl bg-white shadow-sm ring-1 ring-slate-200"
         />
@@ -77,7 +77,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { getApiErrorMessage } from '@/api/client'
+import { getApiErrorMessage, resolveFileUrl } from '@/api/client'
 import { useGifDetail, useReportGif } from '@/api/queries'
 import EmbedCode from '@/components/EmbedCode.vue'
 import LikeButton from '@/components/LikeButton.vue'

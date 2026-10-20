@@ -19,6 +19,19 @@ import type {
 export const API_BASE_URL: string =
   import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
+/**
+ * The API returns file_url as a path relative to the API origin
+ * (e.g. "/uploads/x.gif") and serves /uploads statically (Keval,
+ * Day 2). Resolve it against the API base URL so <img> tags and
+ * embed codes point at the backend, not the frontend origin.
+ * Absolute URLs pass through unchanged.
+ */
+export function resolveFileUrl(fileUrl: string): string {
+  if (/^https?:\/\//i.test(fileUrl)) return fileUrl
+  const path = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`
+  return `${API_BASE_URL}${path}`
+}
+
 const TOKEN_KEY = 'opengiphy.access_token'
 
 export function getAccessToken(): string | null {
@@ -45,6 +58,29 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
+
+let unauthorizedHandler: (() => void) | null = null
+
+/** App wiring (main.ts) registers what a 401 means: drop auth state, go to /login. */
+export function setUnauthorizedHandler(handler: () => void): void {
+  unauthorizedHandler = handler
+}
+
+api.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError) => {
+    const status = error.response?.status
+    const url = error.config?.url ?? ''
+    // Keval (Day 2): access tokens live 24h, there is no refresh token,
+    // so a 401 means "log in again". Auth endpoints are exempt: a failed
+    // login is itself a 401 and must surface as a form error, not a redirect.
+    if (status === 401 && !url.includes('/auth/') && getAccessToken()) {
+      clearAccessToken()
+      unauthorizedHandler?.()
+    }
+    return Promise.reject(error)
+  },
+)
 
 /** Extract the contract's { detail } message from any axios failure. */
 export function getApiErrorMessage(err: unknown): string {
@@ -94,8 +130,8 @@ export async function fetchGifDetail(gif_id: number): Promise<GifPublic> {
 
 /**
  * Upload a GIF as multipart/form-data per the contract.
- * Tags are sent as repeated `tags` form fields. If Keval's backend
- * only accepts the comma-separated variant, change this one place.
+ * Tags go as ONE comma-separated `tags` field (confirmed by Keval,
+ * Day 2); responses return tags as a JSON array.
  */
 export async function uploadGif(input: {
   file: File
@@ -107,7 +143,9 @@ export async function uploadGif(input: {
   form.append('file', input.file)
   form.append('title', input.title)
   if (input.description) form.append('description', input.description)
-  for (const tag of input.tags ?? []) form.append('tags', tag)
+  if (input.tags && input.tags.length > 0) {
+    form.append('tags', input.tags.join(','))
+  }
   const { data } = await api.post<GifPublic>('/gifs', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   })

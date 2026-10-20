@@ -2,7 +2,7 @@
   <article class="mb-4 break-inside-avoid overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
     <RouterLink :to="{ name: 'gif-detail', params: { gif_id: gif.id } }" class="block">
       <img
-        :src="gif.file_url"
+        :src="resolveFileUrl(gif.file_url)"
         :alt="gif.title"
         loading="lazy"
         class="w-full object-cover"
@@ -39,6 +39,7 @@
 </template>
 
 <script setup lang="ts">
+import { resolveFileUrl } from '@/api/client'
 import type { GifPublic } from '@/api/types'
 import LikeButton from '@/components/LikeButton.vue'
 import TagChip from '@/components/TagChip.vue'
