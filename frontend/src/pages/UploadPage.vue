@@ -1,13 +1,17 @@
 <template>
   <div class="mx-auto max-w-2xl px-4 py-8">
-    <h1 class="text-2xl font-bold text-slate-900">Upload a GIF</h1>
-    <p class="mt-1 text-sm text-slate-500">Share a looping moment with everyone.</p>
+    <h1 class="text-3xl font-extrabold tracking-tight text-ink">Upload a GIF</h1>
+    <p class="mt-1 text-sm text-ink-soft">Share a looping moment with everyone.</p>
 
-    <form class="mt-6 space-y-5" novalidate @submit.prevent="submit">
+    <form
+      class="mt-6 space-y-5 rounded-card bg-raise p-6 shadow-sm ring-1 ring-line"
+      novalidate
+      @submit.prevent="submit"
+    >
       <div
         :class="[
-          'rounded-xl border-2 border-dashed p-8 text-center transition-colors',
-          isDragging ? 'border-indigo-500 bg-indigo-50' : 'border-slate-300 bg-white',
+          'rounded-card border-2 border-dashed p-8 text-center transition-colors',
+          isDragging ? 'border-accent bg-accent-soft' : 'border-line bg-bg',
         ]"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
@@ -24,26 +28,26 @@
         />
         <div v-if="previewUrl" class="mx-auto max-w-xs">
           <img :src="previewUrl" alt="Upload preview" class="mx-auto max-h-64 rounded-lg" />
-          <p class="mt-2 text-sm text-slate-600">{{ file?.name }}</p>
+          <p class="mt-2 text-sm text-ink-soft">{{ file?.name }}</p>
           <button
             type="button"
-            class="mt-1 text-xs font-medium text-slate-500 hover:text-rose-600"
+            class="mt-1 text-xs font-semibold text-ink-faint transition-colors hover:text-danger"
             @click.stop="clearFile"
           >
             Remove
           </button>
         </div>
         <div v-else class="cursor-pointer">
-          <p class="text-sm font-medium text-slate-700">
+          <p class="text-sm font-semibold text-ink">
             Drag &amp; drop your GIF here, or click to browse
           </p>
-          <p class="mt-1 text-xs text-slate-400">GIF only · max 10 MB</p>
+          <p class="mt-1 text-xs text-ink-faint">GIF only · max 10 MB</p>
         </div>
       </div>
 
       <div>
-        <label for="upload-title" class="block text-sm font-medium text-slate-700">
-          Title <span class="text-rose-500">*</span>
+        <label for="upload-title" class="block text-sm font-semibold text-ink">
+          Title <span class="text-accent">*</span>
         </label>
         <input
           id="upload-title"
@@ -52,13 +56,13 @@
           required
           maxlength="120"
           placeholder="Give it a catchy title"
-          class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          class="field mt-1"
         />
       </div>
 
       <div>
-        <label for="upload-description" class="block text-sm font-medium text-slate-700">
-          Description <span class="font-normal text-slate-400">(optional)</span>
+        <label for="upload-description" class="block text-sm font-semibold text-ink">
+          Description <span class="font-normal text-ink-faint">(optional)</span>
         </label>
         <textarea
           id="upload-description"
@@ -66,30 +70,26 @@
           rows="3"
           maxlength="500"
           placeholder="What's happening in this GIF?"
-          class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          class="field mt-1"
         />
       </div>
 
       <div>
-        <label for="upload-tags" class="block text-sm font-medium text-slate-700">
-          Tags <span class="font-normal text-slate-400">(optional, comma-separated)</span>
+        <label for="upload-tags" class="block text-sm font-semibold text-ink">
+          Tags <span class="font-normal text-ink-faint">(optional, comma-separated)</span>
         </label>
         <input
           id="upload-tags"
           v-model="tagsInput"
           type="text"
           placeholder="funny, cat, reaction"
-          class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          class="field mt-1"
         />
       </div>
 
-      <p v-if="error" role="alert" class="text-sm text-rose-600">{{ error }}</p>
+      <p v-if="error" role="alert" class="text-sm text-danger">{{ error }}</p>
 
-      <button
-        type="submit"
-        :disabled="uploading"
-        class="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-      >
+      <button type="submit" :disabled="uploading" class="btn-accent w-full px-4 py-2.5 text-sm">
         {{ uploading ? 'Uploading…' : 'Upload GIF' }}
       </button>
     </form>
@@ -101,6 +101,7 @@ import { computed, onUnmounted, ref, useTemplateRef } from 'vue'
 import { useRouter } from 'vue-router'
 import { getApiErrorMessage } from '@/api/client'
 import { useUploadGif } from '@/api/queries'
+import { useToast } from '@/composables/useToast'
 
 const MAX_BYTES = 10 * 1024 * 1024
 
@@ -115,6 +116,7 @@ const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
 const router = useRouter()
 const upload = useUploadGif()
 const uploading = computed(() => upload.isPending.value)
+const { toast } = useToast()
 
 const previewUrl = ref<string | null>(null)
 
@@ -187,6 +189,7 @@ async function submit() {
       description: description.value.trim().slice(0, 500) || undefined,
       tags: tags.length > 0 ? tags : undefined,
     })
+    toast('GIF uploaded — looking good!')
     await router.push({ name: 'gif-detail', params: { gif_id: gif.id } })
   } catch (err) {
     error.value = getApiErrorMessage(err)

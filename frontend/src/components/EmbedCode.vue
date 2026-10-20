@@ -1,24 +1,31 @@
 <template>
-  <section class="rounded-xl bg-white p-4 ring-1 ring-slate-200" aria-label="Embed codes">
-    <h2 class="text-sm font-semibold text-slate-900">Embed this GIF</h2>
-    <div
-      v-for="snippet in snippets"
-      :key="snippet.label"
-      class="mt-3"
-    >
-      <div class="flex items-center justify-between">
-        <span class="text-xs font-medium text-slate-500">{{ snippet.label }}</span>
-        <button
-          type="button"
-          class="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-200"
-          @click="copy(snippet)"
-        >
-          {{ copiedLabel === snippet.label ? 'Copied!' : 'Copy' }}
-        </button>
-      </div>
-      <code class="mt-1 block overflow-x-auto rounded-md bg-slate-50 p-2 text-xs text-slate-700 ring-1 ring-slate-200">
+  <section class="rounded-card bg-raise p-4 ring-1 ring-line" aria-label="Embed codes">
+    <h2 class="text-sm font-bold text-ink">Embed this GIF</h2>
+    <div class="mt-3 flex gap-1 rounded-lg bg-line/40 p-1" role="tablist" aria-label="Embed format">
+      <button
+        v-for="snippet in snippets"
+        :key="snippet.label"
+        type="button"
+        role="tab"
+        :aria-selected="activeLabel === snippet.label"
+        class="flex-1 rounded-md px-2 py-1.5 text-xs font-semibold transition-colors"
+        :class="
+          activeLabel === snippet.label
+            ? 'bg-raise text-ink shadow-sm'
+            : 'text-ink-soft hover:text-ink'
+        "
+        @click="activeLabel = snippet.label"
+      >
+        {{ snippet.label }}
+      </button>
+    </div>
+    <div v-for="snippet in snippets" :key="snippet.label" v-show="activeLabel === snippet.label">
+      <code class="code-box mt-3 block overflow-x-auto whitespace-nowrap p-3 text-xs">
         {{ snippet.code }}
       </code>
+      <button type="button" class="btn-soft mt-2 px-3 py-1.5 text-xs" @click="copy(snippet)">
+        {{ copiedLabel === snippet.label ? 'Copied!' : 'Copy' }}
+      </button>
     </div>
   </section>
 </template>
@@ -27,6 +34,7 @@
 import { computed, ref } from 'vue'
 import { resolveFileUrl } from '@/api/client'
 import type { GifPublic } from '@/api/types'
+import { useToast } from '@/composables/useToast'
 
 const props = defineProps<{ gif: GifPublic }>()
 
@@ -49,7 +57,9 @@ const snippets = computed(() => [
   { label: 'Direct URL', code: fileUrl.value },
 ])
 
+const activeLabel = ref('HTML')
 const copiedLabel = ref<string | null>(null)
+const { toast } = useToast()
 
 async function copy(snippet: { label: string; code: string }) {
   try {
@@ -64,6 +74,7 @@ async function copy(snippet: { label: string; code: string }) {
     ta.remove()
   }
   copiedLabel.value = snippet.label
+  toast(`${snippet.label} embed code copied`)
   setTimeout(() => {
     copiedLabel.value = null
   }, 1500)

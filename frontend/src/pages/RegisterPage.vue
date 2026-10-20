@@ -1,78 +1,76 @@
 <template>
-  <div class="mx-auto max-w-md px-4 py-12">
-    <h1 class="text-2xl font-bold text-slate-900">Create your account</h1>
-    <p class="mt-1 text-sm text-slate-500">Join OpenGIPHY to upload and like GIFs.</p>
+  <div class="flex justify-center px-4 py-12">
+    <div class="w-full max-w-md rounded-card bg-raise p-6 shadow-sm ring-1 ring-line sm:p-8">
+      <h1 class="text-2xl font-extrabold tracking-tight text-ink">Create your account</h1>
+      <p class="mt-1 text-sm text-ink-soft">Join OpenGIPHY to upload and like GIFs.</p>
 
-    <form class="mt-6 space-y-4" novalidate @submit.prevent="submit">
-      <div>
-        <label for="reg-email" class="block text-sm font-medium text-slate-700">Email</label>
-        <input
-          id="reg-email"
-          v-model="email"
-          type="email"
-          autocomplete="email"
-          required
-          class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        />
-      </div>
-      <div>
-        <label for="reg-username" class="block text-sm font-medium text-slate-700">
-          Username <span class="font-normal text-slate-400">(3–30 characters)</span>
-        </label>
-        <input
-          id="reg-username"
-          v-model="username"
-          type="text"
-          autocomplete="username"
-          required
-          minlength="3"
-          maxlength="30"
-          class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        />
-      </div>
-      <div>
-        <label for="reg-password" class="block text-sm font-medium text-slate-700">
-          Password <span class="font-normal text-slate-400">(min 8 characters)</span>
-        </label>
-        <input
-          id="reg-password"
-          v-model="password"
-          type="password"
-          autocomplete="new-password"
-          required
-          minlength="8"
-          class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        />
-      </div>
-      <div>
-        <label for="reg-confirm" class="block text-sm font-medium text-slate-700">Confirm password</label>
-        <input
-          id="reg-confirm"
-          v-model="confirmPassword"
-          type="password"
-          autocomplete="new-password"
-          required
-          class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        />
-      </div>
+      <form class="mt-6 space-y-4" novalidate @submit.prevent="submit">
+        <div>
+          <label for="reg-email" class="block text-sm font-semibold text-ink">Email</label>
+          <input
+            id="reg-email"
+            v-model="email"
+            type="email"
+            autocomplete="email"
+            required
+            class="field mt-1"
+          />
+        </div>
+        <div>
+          <label for="reg-username" class="block text-sm font-semibold text-ink">
+            Username <span class="font-normal text-ink-faint">(3–30 characters)</span>
+          </label>
+          <input
+            id="reg-username"
+            v-model="username"
+            type="text"
+            autocomplete="username"
+            required
+            minlength="3"
+            maxlength="30"
+            class="field mt-1"
+          />
+        </div>
+        <div>
+          <label for="reg-password" class="block text-sm font-semibold text-ink">
+            Password <span class="font-normal text-ink-faint">(min 8 characters)</span>
+          </label>
+          <input
+            id="reg-password"
+            v-model="password"
+            type="password"
+            autocomplete="new-password"
+            required
+            minlength="8"
+            class="field mt-1"
+          />
+        </div>
+        <div>
+          <label for="reg-confirm" class="block text-sm font-semibold text-ink">Confirm password</label>
+          <input
+            id="reg-confirm"
+            v-model="confirmPassword"
+            type="password"
+            autocomplete="new-password"
+            required
+            class="field mt-1"
+          />
+        </div>
 
-      <p v-if="error" role="alert" class="text-sm text-rose-600">{{ error }}</p>
+        <p v-if="error" role="alert" class="text-sm text-danger">{{ error }}</p>
 
-      <button
-        type="submit"
-        :disabled="pending"
-        class="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-      >
-        {{ pending ? 'Creating account…' : 'Create account' }}
-      </button>
-    </form>
+        <button type="submit" :disabled="pending" class="btn-accent w-full px-4 py-2.5 text-sm">
+          {{ pending ? 'Creating account…' : 'Create account' }}
+        </button>
+      </form>
 
-    <p class="mt-4 text-center text-sm text-slate-500">
-      Already have an account?
-      <RouterLink to="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
-        Log in
-      </RouterLink>
-    </p>
+      <p class="mt-4 text-center text-sm text-ink-soft">
+        Already have an account?
+        <RouterLink to="/login" class="font-semibold text-accent hover:text-accent-hover">
+          Log in
+        </RouterLink>
+      </p>
+    </div>
   </div>
 </template>
 

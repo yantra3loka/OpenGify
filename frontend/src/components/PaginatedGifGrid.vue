@@ -1,18 +1,18 @@
 <template>
   <div>
-    <div v-if="query.isPending.value" class="columns-2 gap-4 sm:columns-3 lg:columns-4" aria-label="Loading">
+    <div v-if="query.isPending.value" class="columns-2 gap-5 min-[900px]:columns-3 min-[1240px]:columns-4" aria-label="Loading">
       <div
         v-for="n in 8"
         :key="n"
-        class="mb-4 h-48 animate-pulse break-inside-avoid rounded-xl bg-slate-200"
+        class="mb-5 h-48 animate-pulse break-inside-avoid rounded-card bg-line/60"
       />
     </div>
 
     <div v-else-if="query.isError.value" class="py-16 text-center">
-      <p class="text-slate-600">Couldn't load GIFs: {{ errorMessage }}</p>
+      <p class="text-ink-soft">Couldn't load GIFs: {{ errorMessage }}</p>
       <button
         type="button"
-        class="mt-3 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+        class="btn-accent mt-3 px-4 py-2 text-sm"
         @click="() => query.refetch()"
       >
         Retry
@@ -21,13 +21,13 @@
 
     <template v-else>
       <GifGrid v-if="items.length > 0" :gifs="items" />
-      <div v-else class="py-16 text-center text-slate-500">
+      <div v-else class="py-16 text-center text-ink-soft">
         <slot name="empty">
           <p>No GIFs found.</p>
         </slot>
       </div>
       <div ref="sentinel" class="h-2" aria-hidden="true" />
-      <p v-if="query.isFetchingNextPage.value" class="py-4 text-center text-sm text-slate-500">
+      <p v-if="query.isFetchingNextPage.value" class="py-4 text-center text-sm text-ink-soft">
         Loading more…
       </p>
     </template>

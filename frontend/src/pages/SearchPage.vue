@@ -1,8 +1,8 @@
 <template>
   <div class="px-4 py-6">
     <SearchBar :initial="q" class="mx-auto" />
-    <h1 class="mt-6 text-xl font-bold text-slate-900">
-      <template v-if="tag">Tag: <span class="text-indigo-600">#{{ tag }}</span></template>
+    <h1 class="mt-6 text-2xl font-extrabold tracking-tight text-ink">
+      <template v-if="tag">Tag: <span class="text-accent">#{{ tag }}</span></template>
       <template v-else-if="q">Results for “{{ q }}”</template>
       <template v-else>Search</template>
     </h1>
@@ -11,7 +11,7 @@
         <p>No GIFs matched your search. Try another term or tag.</p>
       </template>
     </PaginatedGifGrid>
-    <p v-else class="mt-4 text-sm text-slate-500">
+    <p v-else class="mt-4 text-sm text-ink-soft">
       Type above to search by title, description or tag.
     </p>
   </div>

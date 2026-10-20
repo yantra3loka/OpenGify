@@ -1,49 +1,47 @@
 <template>
-  <div class="mx-auto max-w-md px-4 py-12">
-    <h1 class="text-2xl font-bold text-slate-900">Welcome back</h1>
-    <p class="mt-1 text-sm text-slate-500">Log in to upload and like GIFs.</p>
+  <div class="flex justify-center px-4 py-12">
+    <div class="w-full max-w-md rounded-card bg-raise p-6 shadow-sm ring-1 ring-line sm:p-8">
+      <h1 class="text-2xl font-extrabold tracking-tight text-ink">Welcome back</h1>
+      <p class="mt-1 text-sm text-ink-soft">Log in to upload and like GIFs.</p>
 
-    <form class="mt-6 space-y-4" novalidate @submit.prevent="submit">
-      <div>
-        <label for="login-email" class="block text-sm font-medium text-slate-700">Email</label>
-        <input
-          id="login-email"
-          v-model="email"
-          type="email"
-          autocomplete="email"
-          required
-          class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        />
-      </div>
-      <div>
-        <label for="login-password" class="block text-sm font-medium text-slate-700">Password</label>
-        <input
-          id="login-password"
-          v-model="password"
-          type="password"
-          autocomplete="current-password"
-          required
-          class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        />
-      </div>
+      <form class="mt-6 space-y-4" novalidate @submit.prevent="submit">
+        <div>
+          <label for="login-email" class="block text-sm font-semibold text-ink">Email</label>
+          <input
+            id="login-email"
+            v-model="email"
+            type="email"
+            autocomplete="email"
+            required
+            class="field mt-1"
+          />
+        </div>
+        <div>
+          <label for="login-password" class="block text-sm font-semibold text-ink">Password</label>
+          <input
+            id="login-password"
+            v-model="password"
+            type="password"
+            autocomplete="current-password"
+            required
+            class="field mt-1"
+          />
+        </div>
 
-      <p v-if="error" role="alert" class="text-sm text-rose-600">{{ error }}</p>
+        <p v-if="error" role="alert" class="text-sm text-danger">{{ error }}</p>
 
-      <button
-        type="submit"
-        :disabled="pending"
-        class="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-      >
-        {{ pending ? 'Logging in…' : 'Log in' }}
-      </button>
-    </form>
+        <button type="submit" :disabled="pending" class="btn-accent w-full px-4 py-2.5 text-sm">
+          {{ pending ? 'Logging in…' : 'Log in' }}
+        </button>
+      </form>
 
-    <p class="mt-4 text-center text-sm text-slate-500">
-      New to OpenGIPHY?
-      <RouterLink to="/register" class="font-medium text-indigo-600 hover:text-indigo-500">
-        Create an account
-      </RouterLink>
-    </p>
+      <p class="mt-4 text-center text-sm text-ink-soft">
+        New to OpenGIPHY?
+        <RouterLink to="/register" class="font-semibold text-accent hover:text-accent-hover">
+          Create an account
+        </RouterLink>
+      </p>
+    </div>
   </div>
 </template>
 

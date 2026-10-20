@@ -1,12 +1,198 @@
 @import "tailwindcss";
 
-html {
+/*
+ * OpenGIPHY design tokens — ported 1:1 from the UI demo.
+ * Raw palette lives in CSS variables so the whole app flips between the
+ * warm-paper light theme and the demo's dark theme purely from
+ * prefers-color-scheme; Tailwind utilities reference the variables.
+ */
+:root {
   color-scheme: light;
+  --bg: #f4f2ec;
+  --bg-raise: #fffdf8;
+  --ink: #16150f;
+  --ink-soft: #5c574c;
+  --ink-faint: #8f897b;
+  --accent: #e63e1e;
+  --accent-hover: #c93315;
+  --accent-soft: #fbe7df;
+  --line: #ddd9cc;
+  --danger: #b3261e;
+  --topbar-bg: rgb(244 242 236 / 0.85);
+  --code-bg: #16150f;
+  --code-ink: #f4f2ec;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #0c0c0e;
+    --bg-raise: #17171b;
+    --ink: #f4f2ec;
+    --ink-soft: #a8a49a;
+    --ink-faint: #716e66;
+    --accent: #ff5230;
+    --accent-hover: #ff6c4d;
+    --accent-soft: #3a1e16;
+    --line: #26262b;
+    --danger: #ff9d8a;
+    --topbar-bg: rgb(12 12 14 / 0.82);
+    --code-bg: #17171b;
+    --code-ink: #f4f2ec;
+  }
+}
+
+@theme inline {
+  --font-sans: "Archivo", ui-sans-serif, system-ui, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+    monospace;
+  --color-bg: var(--bg);
+  --color-raise: var(--bg-raise);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-line: var(--line);
+  --color-danger: var(--danger);
+  --radius-card: 0.875rem;
 }
 
 body {
   margin: 0;
-  font-family:
-    system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ---------------- Shared building blocks (demo language) ---------------- */
+
+.btn-accent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.625rem;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+.btn-accent:hover {
+  background: var(--accent-hover);
+}
+.btn-accent:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn-soft {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.625rem;
+  background: var(--bg-raise);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  font-weight: 600;
+  transition: border-color 0.15s ease, color 0.15s ease;
+  cursor: pointer;
+}
+.btn-soft:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-soft:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.field {
+  width: 100%;
+  border-radius: 0.625rem;
+  border: 1px solid var(--line);
+  background: var(--bg-raise);
+  color: var(--ink);
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+}
+.field::placeholder {
+  color: var(--ink-faint);
+}
+.field:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.tag-chip {
+  display: inline-block;
+  border-radius: 9999px;
+  border: 1px solid var(--line);
+  background: var(--bg-raise);
+  padding: 0.125rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  transition: border-color 0.15s ease, color 0.15s ease,
+    background 0.15s ease;
+  cursor: pointer;
+}
+.tag-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.tag-chip-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+.tag-chip-active:hover {
+  color: var(--bg);
+  border-color: var(--ink);
+}
+
+.code-box {
+  background: var(--code-bg);
+  color: var(--code-ink);
+  border-radius: 0.5rem;
+  font-family: var(--font-mono);
+}
+
+.topbar-bg {
+  background: var(--topbar-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ---------------- Toasts ---------------- */
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toast-item {
+  animation: toast-in 0.18s ease-out;
+  background: var(--ink);
+  color: var(--bg);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
 }
