@@ -32,7 +32,36 @@ code doesn't change.
 | `npm run build`     | Typecheck + production build |
 | `npm run preview`   | Preview the production build |
 | `npm test`          | Vitest suite (42 tests)      |
+| `npm run test:e2e`  | Playwright E2E suite (below) |
 | `npm run typecheck` | TypeScript check without build |
+
+## E2E tests (Playwright)
+
+Browser-level checks of the real app — no mocks. The specs live in
+`e2e/app.spec.ts` and cover the home feed, topbar search, trending, the GIF
+detail page, login, liking a GIF, the Download button, and the own-profile
+Uploads/Liked tabs.
+
+The suite does NOT start any servers itself. Prerequisites:
+
+1. Backend running on `http://localhost:8000` with the seeded demo data
+   (demo account `demo@example.com` / `demo1234`).
+2. Frontend dev server running on `http://localhost:5173`
+   (`npm run dev`, with `VITE_USE_MOCKS=false`).
+3. One-time browser download:
+
+   ```bash
+   npx playwright install chromium
+   ```
+
+Run:
+
+```bash
+npm run test:e2e
+```
+
+Tests run serially (`workers: 1`, no retries) because they share the one
+seeded database.
 
 ## Layout
 
