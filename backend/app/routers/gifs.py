@@ -1,8 +1,10 @@
 import os
+import re
 import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy import String, func
 from sqlmodel import Session, col, select
 
@@ -161,6 +163,35 @@ def gif_detail(
     if me is not None:
         liked = session.get(Like, (me.id, gif.id)) is not None
     return to_public(gif, liked)
+
+
+def _download_filename(gif: Gif) -> str:
+    """Attachment filename from the title: alphanumerics kept, spaces become
+    hyphens, everything else stripped. Empty result falls back to the id."""
+    cleaned = "".join(
+        ch if ch.isalnum() else ("-" if ch == " " else "") for ch in gif.title
+    )
+    cleaned = re.sub(r"-{2,}", "-", cleaned).strip("-")
+    return f"{cleaned}.gif" if cleaned else f"opengiphy-{gif.id}.gif"
+
+
+@router.get("/{gif_id}/download")
+def download_gif(
+    gif_id: int,
+    session: Session = Depends(get_session),
+):
+    """Serve the GIF file as an attachment download (public; does not
+    touch view_count or like_count)."""
+    gif = session.get(Gif, gif_id)
+    if gif is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "GIF not found")
+    path = gif.file_path
+    if not path or not os.path.isfile(path):
+        # fall back to the uploads dir + the file_url basename
+        path = os.path.join(settings.upload_dir, os.path.basename(gif.file_url or ""))
+    if not os.path.isfile(path):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "GIF file not found")
+    return FileResponse(path, media_type="image/gif", filename=_download_filename(gif))
 
 
 @router.post("/{gif_id}/like", response_model=GifPublic)

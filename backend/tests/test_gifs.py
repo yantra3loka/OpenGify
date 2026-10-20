@@ -113,3 +113,34 @@ def test_profile(client):
     assert p["gifs"]["total"] == 1
 
     assert client.get("/users/nobody").status_code == 404
+
+
+def test_download_gif(client):
+    token = setup_user(client)
+    g = upload_gif(client, token, title="funny cat")
+
+    r = client.get(f"/gifs/{g['id']}/download")
+    assert r.status_code == 200
+    cd = r.headers["content-disposition"]
+    assert "attachment" in cd
+    assert 'filename="funny-cat.gif"' in cd
+    assert r.headers["content-type"] == "image/gif"
+    assert r.content == TINY_GIF
+
+    # downloading is not a view: the first detail fetch shows exactly 1
+    d = client.get(f"/gifs/{g['id']}").json()
+    assert d["view_count"] == 1
+    assert d["like_count"] == 0
+
+
+def test_download_unknown_id_404(client):
+    assert client.get("/gifs/99999/download").status_code == 404
+
+
+def test_download_missing_file_404(client, tmp_path):
+    token = setup_user(client)
+    g = upload_gif(client, token)
+    # remove the stored file from the (test) uploads dir
+    for f in (tmp_path / "uploads").iterdir():
+        f.unlink()
+    assert client.get(f"/gifs/{g['id']}/download").status_code == 404
