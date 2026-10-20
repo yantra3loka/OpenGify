@@ -1,12 +1,19 @@
 @import "tailwindcss";
 
 /*
- * OpenGIPHY design tokens — ported 1:1 from the UI demo.
- * Raw palette lives in CSS variables so the whole app flips between the
- * warm-paper light theme and the demo's dark theme purely from
- * prefers-color-scheme; Tailwind utilities reference the variables.
+ * OpenGIPHY design tokens — ported 1:1 from the UI demo, extended into
+ * named themes. The active theme is a `data-theme` attribute on <html>,
+ * set before first paint by the inline script in index.html (saved
+ * choice from localStorage, else paper / midnight from the OS scheme)
+ * and switched at runtime by ThemeSwitcher. Raw palette lives in CSS
+ * variables; Tailwind utilities reference the variables.
+ *   paper    — the demo light theme (default)
+ *   midnight — the demo dark theme
+ *   neon     — violet dark
+ *   ocean    — sky light
  */
-:root {
+:root,
+:root[data-theme="paper"] {
   color-scheme: light;
   --bg: #f4f2ec;
   --bg-raise: #fffdf8;
@@ -23,8 +30,9 @@
   --code-ink: #f4f2ec;
 }
 
+/* No-attribute fallback (e.g. JS disabled): follow the OS scheme. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     color-scheme: dark;
     --bg: #0c0c0e;
     --bg-raise: #17171b;
@@ -40,6 +48,57 @@
     --code-bg: #17171b;
     --code-ink: #f4f2ec;
   }
+}
+
+:root[data-theme="midnight"] {
+  color-scheme: dark;
+  --bg: #0c0c0e;
+  --bg-raise: #17171b;
+  --ink: #f4f2ec;
+  --ink-soft: #a8a49a;
+  --ink-faint: #716e66;
+  --accent: #ff5230;
+  --accent-hover: #ff6c4d;
+  --accent-soft: #3a1e16;
+  --line: #26262b;
+  --danger: #ff9d8a;
+  --topbar-bg: rgb(12 12 14 / 0.82);
+  --code-bg: #17171b;
+  --code-ink: #f4f2ec;
+}
+
+:root[data-theme="neon"] {
+  color-scheme: dark;
+  --bg: #0a0a14;
+  --bg-raise: #141424;
+  --ink: #f2f2fa;
+  --ink-soft: #a6a6c4;
+  --ink-faint: #6e6e90;
+  --accent: #8b5cf6;
+  --accent-hover: #a78bfa;
+  --accent-soft: #251b47;
+  --line: #262640;
+  --danger: #fda4af;
+  --topbar-bg: rgb(10 10 20 / 0.82);
+  --code-bg: #141424;
+  --code-ink: #f2f2fa;
+}
+
+:root[data-theme="ocean"] {
+  color-scheme: light;
+  --bg: #e9f1fa;
+  --bg-raise: #ffffff;
+  --ink: #0e2233;
+  --ink-soft: #496a84;
+  --ink-faint: #82a0b5;
+  --accent: #0284c7;
+  --accent-hover: #0369a1;
+  --accent-soft: #dff1fc;
+  --line: #cfdfef;
+  --danger: #b3261e;
+  --topbar-bg: rgb(233 241 250 / 0.85);
+  --code-bg: #0e2233;
+  --code-ink: #e9f1fa;
 }
 
 @theme inline {
@@ -174,6 +233,31 @@ body {
   background: var(--topbar-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+}
+
+/* ---------------- Theme switcher dots ---------------- */
+
+.theme-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+.theme-dot-swatch {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  border: 1px solid var(--line);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.theme-dot:hover .theme-dot-swatch {
+  transform: scale(1.15);
+}
+.theme-dot-active .theme-dot-swatch {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 }
 
 /* ---------------- Toasts ---------------- */

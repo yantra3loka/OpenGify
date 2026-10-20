@@ -51,6 +51,10 @@ describe('LoginPage', () => {
 
   it('shows a validation message on empty submit', async () => {
     const { wrapper } = await mountWithPlugins(LoginPage)
+    // The form ships pre-filled with the demo account; clear both fields
+    // so this still exercises the empty-form validation path.
+    await wrapper.find('#login-email').setValue('')
+    await wrapper.find('#login-password').setValue('')
     await wrapper.find('form').trigger('submit.prevent')
     await flush()
     expect(wrapper.find('[role="alert"]').text()).toContain('email and password')

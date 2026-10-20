@@ -4,6 +4,27 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Apply the saved theme before first paint (no flash): the choice
+      // from localStorage, else paper — or midnight on a dark OS scheme.
+      (function () {
+        var themes = ['paper', 'midnight', 'neon', 'ocean']
+        var saved = null
+        try {
+          saved = localStorage.getItem('opengiphy-theme')
+        } catch (e) {
+          saved = null
+        }
+        var theme =
+          themes.indexOf(saved) !== -1
+            ? saved
+            : window.matchMedia &&
+                window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'midnight'
+              : 'paper'
+        document.documentElement.dataset.theme = theme
+      })()
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

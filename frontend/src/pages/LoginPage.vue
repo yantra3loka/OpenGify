@@ -51,8 +51,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { getApiErrorMessage } from '@/api/client'
 import { useAuth } from '@/api/useAuth'
 
-const email = ref('')
-const password = ref('')
+const email = ref('demo@example.com')
+const password = ref('demo1234')
 const error = ref<string | null>(null)
 const pending = ref(false)
 

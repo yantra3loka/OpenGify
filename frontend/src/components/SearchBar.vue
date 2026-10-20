@@ -1,13 +1,13 @@
 <template>
-  <form class="flex w-full max-w-xl gap-2" @submit.prevent="submit">
+  <form class="flex w-full max-w-xl flex-nowrap items-center gap-2" @submit.prevent="submit">
     <input
       v-model="term"
       type="search"
       placeholder="Search GIFs, tags, creators…"
       aria-label="Search GIFs"
-      class="field min-w-0 flex-1 !rounded-full !px-4"
+      class="field h-10 min-w-0 flex-1 !rounded-full !px-4"
     />
-    <button type="submit" class="btn-accent shrink-0 rounded-full px-4 py-2 text-sm">
+    <button type="submit" class="btn-accent h-10 shrink-0 rounded-full px-4 text-sm">
       Search
     </button>
   </form>

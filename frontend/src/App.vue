@@ -2,6 +2,7 @@
 import { useAuth } from '@/api/useAuth'
 import { useRouter } from 'vue-router'
 import SearchBar from '@/components/SearchBar.vue'
+import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
 import ToastHost from '@/components/ToastHost.vue'
 
 const { isAuthenticated, logout } = useAuth()
@@ -48,8 +49,9 @@ function handleLogout() {
               {{ link.label }}
             </RouterLink>
           </div>
-          <SearchBar class="mx-auto hidden max-w-md min-[560px]:block" />
+          <SearchBar class="mx-auto hidden min-[560px]:flex" />
           <div class="ml-auto flex shrink-0 items-center gap-3 min-[560px]:ml-0">
+            <ThemeSwitcher class="hidden min-[560px]:flex" />
             <RouterLink
               v-if="isAuthenticated"
               to="/upload"
@@ -79,8 +81,9 @@ function handleLogout() {
             </template>
           </div>
         </nav>
-        <div class="pb-3 min-[560px]:hidden">
-          <SearchBar />
+        <div class="flex items-center gap-2 pb-3 min-[560px]:hidden">
+          <SearchBar class="min-w-0 flex-1" />
+          <ThemeSwitcher class="shrink-0" />
         </div>
       </div>
     </header>
