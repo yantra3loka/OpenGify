@@ -46,7 +46,7 @@ GIF files are stored on the local filesystem (`backend/uploads/`); all metadata 
 ### Prerequisites
 
 - Python 3.12
-- Node 20+
+- Node 22+
 - PostgreSQL running locally
 
 ### Backend
