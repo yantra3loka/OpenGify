@@ -18,6 +18,29 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class ForgotPasswordRequest(BaseModel):
+    """No-verification password reset (product decision): knowing the
+    account's email is enough to set a new password. Same password
+    rules as register."""
+    email: EmailStr
+    new_password: str = Field(min_length=8)
+    confirm_password: str
+
+
+class UpdateProfileRequest(BaseModel):
+    username: str = Field(min_length=3, max_length=30)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8)
+    confirm_password: str
+
+
+class MessageResponse(BaseModel):
+    message: str
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"

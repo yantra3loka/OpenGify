@@ -39,3 +39,59 @@ def test_login_wrong_password(client):
 def test_me_unauthorized(client):
     assert client.get("/auth/me").status_code == 401
     assert client.get("/auth/me", headers={"Authorization": "Bearer junk"}).status_code == 401
+
+
+def test_forgot_password_success_new_password_logs_in(client):
+    register(client)
+    r = client.post(
+        "/auth/forgot-password",
+        json={
+            "email": "a@x.com",
+            "new_password": "brand-new-pass",
+            "confirm_password": "brand-new-pass",
+        },
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["message"] == "Password updated successfully"
+
+    token = login(client, password="brand-new-pass")
+    assert token
+    old = client.post("/auth/login", json={"email": "a@x.com", "password": "password123"})
+    assert old.status_code == 401
+
+
+def test_forgot_password_unknown_email(client):
+    r = client.post(
+        "/auth/forgot-password",
+        json={
+            "email": "ghost@x.com",
+            "new_password": "brand-new-pass",
+            "confirm_password": "brand-new-pass",
+        },
+    )
+    assert r.status_code == 404
+    assert r.json()["detail"] == "No account found with that email address"
+
+
+def test_forgot_password_confirm_mismatch(client):
+    register(client)
+    r = client.post(
+        "/auth/forgot-password",
+        json={
+            "email": "a@x.com",
+            "new_password": "brand-new-pass",
+            "confirm_password": "different-pass",
+        },
+    )
+    assert r.status_code == 422
+    # password unchanged
+    assert login(client)
+
+
+def test_forgot_password_short_password_rejected(client):
+    register(client)
+    r = client.post(
+        "/auth/forgot-password",
+        json={"email": "a@x.com", "new_password": "short", "confirm_password": "short"},
+    )
+    assert r.status_code == 422

@@ -53,3 +53,106 @@ def test_liked_excludes_other_users_likes(client):
     bobs = client.get("/users/me/liked", headers=auth_headers(bob)).json()
     assert bobs["total"] == 2
     assert {i["id"] for i in bobs["items"]} == {g1["id"], g2["id"]}
+
+
+def test_update_my_username(client):
+    alice, _bob = setup_two_users(client)
+    r = client.patch(
+        "/users/me", json={"username": "alice2"}, headers=auth_headers(alice)
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["username"] == "alice2"
+    assert r.json()["email"] == "a@x.com"
+
+    # reachable under the new name, gone under the old one
+    assert client.get("/users/alice2").status_code == 200
+    assert client.get("/users/alice").status_code == 404
+    me = client.get("/auth/me", headers=auth_headers(alice))
+    assert me.json()["username"] == "alice2"
+
+
+def test_update_my_username_taken(client):
+    alice, _bob = setup_two_users(client)
+    r = client.patch("/users/me", json={"username": "bob"}, headers=auth_headers(alice))
+    assert r.status_code == 409
+
+
+def test_update_my_username_same_name_is_noop(client):
+    alice, _bob = setup_two_users(client)
+    r = client.patch(
+        "/users/me", json={"username": "alice"}, headers=auth_headers(alice)
+    )
+    assert r.status_code == 200
+    assert r.json()["username"] == "alice"
+
+
+def test_update_my_username_anonymous(client):
+    assert client.patch("/users/me", json={"username": "alice2"}).status_code == 401
+
+
+def test_update_my_username_too_short(client):
+    alice, _bob = setup_two_users(client)
+    r = client.patch("/users/me", json={"username": "ab"}, headers=auth_headers(alice))
+    assert r.status_code == 422
+
+
+def test_change_password_success(client):
+    alice, _bob = setup_two_users(client)
+    r = client.post(
+        "/users/me/change-password",
+        json={
+            "current_password": "password123",
+            "new_password": "brand-new-pass",
+            "confirm_password": "brand-new-pass",
+        },
+        headers=auth_headers(alice),
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["message"] == "Password updated successfully"
+
+    assert login(client, password="brand-new-pass")
+    old = client.post("/auth/login", json={"email": "a@x.com", "password": "password123"})
+    assert old.status_code == 401
+
+
+def test_change_password_wrong_current(client):
+    alice, _bob = setup_two_users(client)
+    r = client.post(
+        "/users/me/change-password",
+        json={
+            "current_password": "not-my-password",
+            "new_password": "brand-new-pass",
+            "confirm_password": "brand-new-pass",
+        },
+        headers=auth_headers(alice),
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"] == "Current password is incorrect"
+    assert login(client)  # unchanged
+
+
+def test_change_password_confirm_mismatch(client):
+    alice, _bob = setup_two_users(client)
+    r = client.post(
+        "/users/me/change-password",
+        json={
+            "current_password": "password123",
+            "new_password": "brand-new-pass",
+            "confirm_password": "different-pass",
+        },
+        headers=auth_headers(alice),
+    )
+    assert r.status_code == 422
+    assert login(client)  # unchanged
+
+
+def test_change_password_anonymous(client):
+    r = client.post(
+        "/users/me/change-password",
+        json={
+            "current_password": "password123",
+            "new_password": "brand-new-pass",
+            "confirm_password": "brand-new-pass",
+        },
+    )
+    assert r.status_code == 401

@@ -7,7 +7,14 @@ from ..auth import get_current_user
 from ..config import settings
 from ..db import get_session, init_db
 from ..models import User
-from ..schemas import LoginRequest, RegisterRequest, Token, UserPublic
+from ..schemas import (
+    ForgotPasswordRequest,
+    LoginRequest,
+    MessageResponse,
+    RegisterRequest,
+    Token,
+    UserPublic,
+)
 from ..auth import create_access_token, hash_password, verify_password
 
 
@@ -34,6 +41,24 @@ def build_auth_router():
         if user is None or not verify_password(body.password, user.hashed_password):
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid email or password")
         return Token(access_token=create_access_token(user.id))
+
+    @router.post("/forgot-password", response_model=MessageResponse)
+    def forgot_password(body: ForgotPasswordRequest, session: Session = Depends(get_session)):
+        # No verification step by design: the account email alone is enough.
+        if body.new_password != body.confirm_password:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                "New password and confirm password do not match",
+            )
+        user = session.exec(select(User).where(User.email == body.email)).first()
+        if user is None:
+            raise HTTPException(
+                status.HTTP_404_NOT_FOUND, "No account found with that email address"
+            )
+        user.hashed_password = hash_password(body.new_password)
+        session.add(user)
+        session.commit()
+        return MessageResponse(message="Password updated successfully")
 
     @router.get("/me", response_model=UserPublic)
     def me(user: User = Depends(get_current_user)):
