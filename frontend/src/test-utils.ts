@@ -17,6 +17,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/u/:username', name: 'profile', component: stub },
   { path: '/upload', name: 'upload', component: stub },
   { path: '/login', name: 'login', component: stub },
+  { path: '/forgot-password', name: 'forgot-password', component: stub },
   { path: '/register', name: 'register', component: stub },
 ]
 

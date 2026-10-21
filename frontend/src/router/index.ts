@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getAccessToken } from '@/api/client'
 import GifDetailPage from '@/pages/GifDetailPage.vue'
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage.vue'
 import HomePage from '@/pages/HomePage.vue'
 import LoginPage from '@/pages/LoginPage.vue'
 import ProfilePage from '@/pages/ProfilePage.vue'
@@ -24,6 +25,7 @@ const router = createRouter({
     },
     { path: '/u/:username', name: 'profile', component: ProfilePage },
     { path: '/login', name: 'login', component: LoginPage },
+    { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordPage },
     { path: '/register', name: 'register', component: RegisterPage },
   ],
 })

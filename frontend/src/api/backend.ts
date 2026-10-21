@@ -1,14 +1,18 @@
 import * as mockApi from './mockClient'
 import * as realApi from './client'
 import type {
+  ChangePasswordRequest,
+  ForgotPasswordRequest,
   GifPage,
   GifPublic,
   LoginRequest,
+  MessageResponse,
   ProfilePublic,
   RegisterRequest,
   ReportResult,
   SearchParams,
   Token,
+  UpdateProfileRequest,
   UserPublic,
 } from './types'
 
@@ -23,6 +27,7 @@ import type {
 export interface BackendApi {
   registerUser: (payload: RegisterRequest) => Promise<UserPublic>
   loginUser: (payload: LoginRequest) => Promise<Token>
+  forgotPassword: (payload: ForgotPasswordRequest) => Promise<MessageResponse>
   fetchGifFeed: (page?: number, page_size?: number) => Promise<GifPage>
   searchGifs: (params: SearchParams) => Promise<GifPage>
   fetchTrendingGifs: (page?: number, page_size?: number) => Promise<GifPage>
@@ -43,6 +48,8 @@ export interface BackendApi {
   ) => Promise<ProfilePublic>
   fetchCurrentUser: () => Promise<UserPublic>
   getMyLiked: (page?: number, limit?: number) => Promise<GifPage>
+  updateMyProfile: (payload: UpdateProfileRequest) => Promise<UserPublic>
+  changeMyPassword: (payload: ChangePasswordRequest) => Promise<MessageResponse>
 }
 
 const useMocks = import.meta.env.VITE_USE_MOCKS === 'true'

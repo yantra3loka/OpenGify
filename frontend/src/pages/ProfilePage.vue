@@ -52,6 +52,91 @@
         </div>
       </header>
 
+      <section v-if="isOwn" class="mb-8 rounded-card bg-raise p-6 ring-1 ring-line">
+        <h2 class="text-lg font-extrabold tracking-tight text-ink">Edit profile</h2>
+
+        <form class="mt-4" novalidate @submit.prevent="saveUsername">
+          <div class="flex flex-wrap items-end gap-3">
+            <div class="min-w-52 flex-1">
+              <label for="edit-username" class="block text-sm font-semibold text-ink">
+                Username
+              </label>
+              <input
+                id="edit-username"
+                v-model="editUsername"
+                type="text"
+                autocomplete="username"
+                class="field mt-1"
+              />
+            </div>
+            <button
+              type="submit"
+              :disabled="savingUsername"
+              class="btn-accent px-4 py-2 text-sm"
+            >
+              {{ savingUsername ? 'Saving…' : 'Save username' }}
+            </button>
+          </div>
+          <p v-if="usernameError" role="alert" class="mt-2 text-sm text-danger">
+            {{ usernameError }}
+          </p>
+        </form>
+
+        <div class="my-6 border-t border-line" />
+
+        <form class="space-y-4" novalidate @submit.prevent="savePassword">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-ink-faint">
+            Change password
+          </h3>
+          <div>
+            <label for="edit-current-password" class="block text-sm font-semibold text-ink">
+              Current password
+            </label>
+            <input
+              id="edit-current-password"
+              v-model="currentPassword"
+              type="password"
+              autocomplete="current-password"
+              class="field mt-1"
+            />
+          </div>
+          <div>
+            <label for="edit-new-password" class="block text-sm font-semibold text-ink">
+              New password
+            </label>
+            <input
+              id="edit-new-password"
+              v-model="newPassword"
+              type="password"
+              autocomplete="new-password"
+              class="field mt-1"
+            />
+          </div>
+          <div>
+            <label for="edit-confirm-password" class="block text-sm font-semibold text-ink">
+              Confirm new password
+            </label>
+            <input
+              id="edit-confirm-password"
+              v-model="confirmPassword"
+              type="password"
+              autocomplete="new-password"
+              class="field mt-1"
+            />
+          </div>
+          <p v-if="passwordError" role="alert" class="text-sm text-danger">
+            {{ passwordError }}
+          </p>
+          <button
+            type="submit"
+            :disabled="savingPassword"
+            class="btn-soft px-4 py-2 text-sm"
+          >
+            {{ savingPassword ? 'Saving…' : 'Change password' }}
+          </button>
+        </form>
+      </section>
+
       <div
         v-if="isOwn"
         class="mb-6 inline-flex rounded-full bg-raise p-1 ring-1 ring-line"
@@ -109,15 +194,19 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { backend } from '@/api/backend'
 import { getApiErrorMessage } from '@/api/client'
 import { useMyLikedGifs, useUserProfile } from '@/api/queries'
 import { useAuth } from '@/api/useAuth'
 import type { GifPublic } from '@/api/types'
+import { useToast } from '@/composables/useToast'
 import GifGrid from '@/components/GifGrid.vue'
 import PaginatedGifGrid from '@/components/PaginatedGifGrid.vue'
 
 const route = useRoute()
+const router = useRouter()
+const { toast } = useToast()
 const username = computed(() => String(route.params.username))
 const page = ref(1)
 
@@ -174,5 +263,79 @@ function formatDate(iso: string): string {
 
 function loadMore() {
   page.value += 1
+}
+
+/* ---------------- Edit profile (own profile only) ---------------- */
+
+const editUsername = ref('')
+watch(
+  () => user.value?.username,
+  (name) => {
+    if (name) editUsername.value = name
+  },
+  { immediate: true },
+)
+
+const usernameError = ref<string | null>(null)
+const savingUsername = ref(false)
+
+async function saveUsername() {
+  usernameError.value = null
+  const next = editUsername.value.trim()
+  if (!next) {
+    usernameError.value = 'Please enter a username.'
+    return
+  }
+  savingUsername.value = true
+  try {
+    const updated = await backend.updateMyProfile({ username: next })
+    // Shared auth state: the topbar chip picks the new name up immediately.
+    currentUser.value = updated
+    toast('Username updated.')
+    if (updated.username !== username.value) {
+      await router.push({
+        name: 'profile',
+        params: { username: updated.username },
+      })
+    }
+  } catch (err) {
+    usernameError.value = getApiErrorMessage(err)
+  } finally {
+    savingUsername.value = false
+  }
+}
+
+const currentPassword = ref('')
+const newPassword = ref('')
+const confirmPassword = ref('')
+const passwordError = ref<string | null>(null)
+const savingPassword = ref(false)
+
+async function savePassword() {
+  passwordError.value = null
+  if (!currentPassword.value || !newPassword.value || !confirmPassword.value) {
+    passwordError.value = 'Please fill in all three password fields.'
+    return
+  }
+  if (newPassword.value !== confirmPassword.value) {
+    passwordError.value = 'New password and confirm password do not match.'
+    return
+  }
+  savingPassword.value = true
+  try {
+    await backend.changeMyPassword({
+      current_password: currentPassword.value,
+      new_password: newPassword.value,
+      confirm_password: confirmPassword.value,
+    })
+    currentPassword.value = ''
+    newPassword.value = ''
+    confirmPassword.value = ''
+    toast('Password updated.')
+  } catch (err) {
+    passwordError.value = getApiErrorMessage(err)
+  } finally {
+    savingPassword.value = false
+  }
 }
 </script>

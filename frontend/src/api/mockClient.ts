@@ -1,12 +1,16 @@
 import type {
+  ChangePasswordRequest,
+  ForgotPasswordRequest,
   GifPage,
   GifPublic,
   LoginRequest,
+  MessageResponse,
   ProfilePublic,
   RegisterRequest,
   ReportResult,
   SearchParams,
   Token,
+  UpdateProfileRequest,
   UserPublic,
 } from './types'
 import { mockGifPage, mockGifs, mockUser } from './mocks'
@@ -68,6 +72,19 @@ export async function loginUser(payload: LoginRequest): Promise<Token> {
     throw mockError('Invalid email or password.', 401)
   }
   return { access_token: 'mock-jwt-token', token_type: 'bearer' }
+}
+
+export async function forgotPassword(
+  payload: ForgotPasswordRequest,
+): Promise<MessageResponse> {
+  await delay()
+  if (payload.new_password !== payload.confirm_password) {
+    throw mockError('New password and confirm password do not match.', 422)
+  }
+  if (payload.email !== mockUser.email) {
+    throw mockError('No account found with that email address.', 404)
+  }
+  return { message: 'Password updated successfully' }
 }
 
 export async function fetchGifFeed(page = 1, page_size = PAGE_DEFAULT): Promise<GifPage> {
@@ -197,4 +214,27 @@ export async function getMyLiked(
   await delay()
   const liked = store.filter((g) => g.liked_by_me)
   return paginate(liked, page, limit)
+}
+
+export async function updateMyProfile(
+  payload: UpdateProfileRequest,
+): Promise<UserPublic> {
+  await delay()
+  if (payload.username === 'taken') {
+    throw mockError('Username already taken.', 409)
+  }
+  return { ...mockUser, username: payload.username }
+}
+
+export async function changeMyPassword(
+  payload: ChangePasswordRequest,
+): Promise<MessageResponse> {
+  await delay()
+  if (payload.current_password === 'wrongpassword') {
+    throw mockError('Current password is incorrect.', 400)
+  }
+  if (payload.new_password !== payload.confirm_password) {
+    throw mockError('New password and confirm password do not match.', 422)
+  }
+  return { message: 'Password updated successfully' }
 }

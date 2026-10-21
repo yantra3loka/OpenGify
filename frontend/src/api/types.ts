@@ -19,6 +19,30 @@ export interface LoginRequest {
   password: string
 }
 
+/** POST /auth/forgot-password — no verification step by design. */
+export interface ForgotPasswordRequest {
+  email: string
+  new_password: string
+  confirm_password: string
+}
+
+/** PATCH /users/me — rename the logged-in user. */
+export interface UpdateProfileRequest {
+  username: string
+}
+
+/** POST /users/me/change-password. */
+export interface ChangePasswordRequest {
+  current_password: string
+  new_password: string
+  confirm_password: string
+}
+
+/** Simple { message } success body (password endpoints). */
+export interface MessageResponse {
+  message: string
+}
+
 /** Returned by POST /auth/login. NOTE: contract calls it a "token pair"
  *  but the schema only carries access_token — no refresh_token. */
 export interface Token {

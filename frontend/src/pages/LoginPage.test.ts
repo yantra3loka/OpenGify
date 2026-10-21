@@ -49,6 +49,13 @@ describe('LoginPage', () => {
     expect(wrapper.find('button[type="submit"]').exists()).toBe(true)
   })
 
+  it('links to the forgot-password page', async () => {
+    const { wrapper } = await mountWithPlugins(LoginPage)
+    const link = wrapper.findAll('a').find((a) => a.text() === 'Forgot password?')
+    expect(link).toBeDefined()
+    expect(link!.attributes('href')).toBe('/forgot-password')
+  })
+
   it('shows a validation message on empty submit', async () => {
     const { wrapper } = await mountWithPlugins(LoginPage)
     // The form ships pre-filled with the demo account; clear both fields

@@ -1,14 +1,18 @@
 import axios, { type AxiosError } from 'axios'
 import type {
   ApiError,
+  ChangePasswordRequest,
+  ForgotPasswordRequest,
   GifPage,
   GifPublic,
   LoginRequest,
+  MessageResponse,
   ProfilePublic,
   RegisterRequest,
   ReportResult,
   SearchParams,
   Token,
+  UpdateProfileRequest,
   UserPublic,
 } from './types'
 
@@ -104,6 +108,17 @@ export async function loginUser(payload: LoginRequest): Promise<Token> {
   return data
 }
 
+/**
+ * Reset a password with NO verification step (product decision):
+ * email + new password is all the endpoint asks for.
+ */
+export async function forgotPassword(
+  payload: ForgotPasswordRequest,
+): Promise<MessageResponse> {
+  const { data } = await api.post<MessageResponse>('/auth/forgot-password', payload)
+  return data
+}
+
 /* ---------------- GIFs ---------------- */
 
 export async function fetchGifFeed(page = 1, page_size = 20): Promise<GifPage> {
@@ -196,5 +211,24 @@ export async function getMyLiked(page = 1, limit = 20): Promise<GifPage> {
   const { data } = await api.get<GifPage>('/users/me/liked', {
     params: { page, limit },
   })
+  return data
+}
+
+/** Rename the logged-in user (PATCH /users/me); 409 when the name is taken. */
+export async function updateMyProfile(
+  payload: UpdateProfileRequest,
+): Promise<UserPublic> {
+  const { data } = await api.patch<UserPublic>('/users/me', payload)
+  return data
+}
+
+/** Change the logged-in user's password (current password required). */
+export async function changeMyPassword(
+  payload: ChangePasswordRequest,
+): Promise<MessageResponse> {
+  const { data } = await api.post<MessageResponse>(
+    '/users/me/change-password',
+    payload,
+  )
   return data
 }

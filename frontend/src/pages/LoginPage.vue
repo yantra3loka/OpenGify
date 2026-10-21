@@ -36,6 +36,12 @@
       </form>
 
       <p class="mt-4 text-center text-sm text-ink-soft">
+        <RouterLink to="/forgot-password" class="font-semibold text-accent hover:text-accent-hover">
+          Forgot password?
+        </RouterLink>
+      </p>
+
+      <p class="mt-4 text-center text-sm text-ink-soft">
         New to OpenGIPHY?
         <RouterLink to="/register" class="font-semibold text-accent hover:text-accent-hover">
           Create an account
