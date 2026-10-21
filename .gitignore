@@ -26,3 +26,11 @@ dist-ssr/
 Thumbs.db
 .vscode/
 .idea/
+
+# Playwright artifacts
+test-results/
+playwright-report/
+
+# Env variants & local archives
+.env.*
+*.zip
